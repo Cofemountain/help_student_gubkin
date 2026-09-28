@@ -130,23 +130,27 @@ const isPublic = computed(() => PUBLIC_ROUTES.includes(route.path))
   flex-direction: column;
 }
 
-/* Мобильная шапка (Header) - компактная высота и процентное ограничение ширины */
+/* Мобильная шапка (Header) - жестко зафиксирована при любом скролле */
 .topbar {
-  position: sticky;
+  position: fixed;
   top: 0;
-  z-index: 90;
+  left: 0;
+  right: 0;
+  z-index: 95;
   width: 100%;
+  height: 48px;
   box-sizing: border-box;
   background: var(--ink);
   color: var(--text-on-ink);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.18);
 }
 
 .topbar-inner {
   width: 92%;
   max-width: 380px;
   margin: 0 auto;
-  height: 44px;
+  height: 48px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -211,13 +215,13 @@ const isPublic = computed(() => PUBLIC_ROUTES.includes(route.path))
   object-fit: cover;
 }
 
-/* Область контента - строго 92% с лимитом 380px */
+/* Область контента - отступ сверху 48px для фиксированной шапки */
 .content {
   flex: 1;
   width: 92%;
   max-width: 380px;
   margin: 0 auto;
-  padding: var(--space-3) 0;
+  padding-top: calc(48px + var(--space-3));
   padding-bottom: calc(88px + env(safe-area-inset-bottom, 16px));
   box-sizing: border-box;
 }
