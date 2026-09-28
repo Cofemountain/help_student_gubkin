@@ -7,20 +7,22 @@
 
       <!-- Мобильная шапка -->
       <header v-if="!isPublic" class="topbar">
-        <div class="topbar-brand">
-          <span class="brand-title">Помощь с физикой</span>
-        </div>
+        <div class="topbar-inner">
+          <div class="topbar-brand">
+            <span class="brand-title">Помощь с физикой</span>
+          </div>
 
-        <div class="topbar-user" v-if="auth.role">
-          <router-link to="/achievements" class="xp-badge" title="Ваши баллы и звание">
-            <span class="badge-icon">{{ auth.currentTitle.badge }}</span>
-            <span class="badge-text">{{ auth.xp }} XP</span>
-          </router-link>
+          <div class="topbar-user" v-if="auth.role">
+            <router-link to="/achievements" class="xp-badge" title="Ваши баллы и звание">
+              <span class="badge-icon">{{ auth.currentTitle.badge }}</span>
+              <span class="badge-text">{{ auth.xp }} XP</span>
+            </router-link>
 
-          <router-link to="/profile" class="user-avatar" :title="auth.userFullName">
-            <img v-if="auth.userAvatar" :src="auth.userAvatar" :alt="auth.userName" class="topbar-avatar-img" />
-            <span v-else>{{ auth.userInitials }}</span>
-          </router-link>
+            <router-link to="/profile" class="user-avatar" :title="auth.userFullName">
+              <img v-if="auth.userAvatar" :src="auth.userAvatar" :alt="auth.userName" class="topbar-avatar-img" />
+              <span v-else>{{ auth.userInitials }}</span>
+            </router-link>
+          </div>
         </div>
       </header>
 
@@ -31,26 +33,28 @@
 
       <!-- Мобильный нижний бар навигации (Всегда активен) -->
       <nav v-if="!isPublic" class="tabbar">
-        <router-link to="/" class="tab" active-class="is-active">
-          <span class="tab-icon">🏠</span>
-          <span class="tab-label">Главная</span>
-        </router-link>
-        <router-link to="/bank" class="tab" active-class="is-active">
-          <span class="tab-icon">📚</span>
-          <span class="tab-label">Банк</span>
-        </router-link>
-        <router-link to="/requests" class="tab" active-class="is-active">
-          <span class="tab-icon">📋</span>
-          <span class="tab-label">Заявки</span>
-        </router-link>
-        <router-link to="/achievements" class="tab" active-class="is-active">
-          <span class="tab-icon">🏆</span>
-          <span class="tab-label">Награды</span>
-        </router-link>
-        <router-link to="/profile" class="tab" active-class="is-active">
-          <span class="tab-icon">👤</span>
-          <span class="tab-label">Профиль</span>
-        </router-link>
+        <div class="tabbar-inner">
+          <router-link to="/" class="tab" active-class="is-active">
+            <span class="tab-icon">🏠</span>
+            <span class="tab-label">Главная</span>
+          </router-link>
+          <router-link to="/bank" class="tab" active-class="is-active">
+            <span class="tab-icon">📚</span>
+            <span class="tab-label">Банк</span>
+          </router-link>
+          <router-link to="/requests" class="tab" active-class="is-active">
+            <span class="tab-icon">📋</span>
+            <span class="tab-label">Заявки</span>
+          </router-link>
+          <router-link to="/achievements" class="tab" active-class="is-active">
+            <span class="tab-icon">🏆</span>
+            <span class="tab-label">Награды</span>
+          </router-link>
+          <router-link to="/profile" class="tab" active-class="is-active">
+            <span class="tab-icon">👤</span>
+            <span class="tab-label">Профиль</span>
+          </router-link>
+        </div>
       </nav>
     </div>
   </div>
@@ -78,14 +82,20 @@ const isPublic = computed(() => PUBLIC_ROUTES.includes(route.path))
   display: flex;
   justify-content: center;
   align-items: stretch;
-  background: #0f172a;
+  background: #f1f5f9;
   width: 100%;
+}
+
+@media (max-width: 640px) {
+  .mobile-container {
+    background: var(--bg);
+  }
 }
 
 /* Оболочка телефона (строго мобильный формат) */
 .shell {
   width: 100%;
-  max-width: 480px;
+  max-width: 440px;
   min-height: 100vh;
   min-height: 100dvh;
   background: var(--bg);
@@ -94,7 +104,7 @@ const isPublic = computed(() => PUBLIC_ROUTES.includes(route.path))
   display: flex;
   flex-direction: column;
   position: relative;
-  box-shadow: 0 0 50px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 0 50px rgba(0, 0, 0, 0.08);
   overflow-x: hidden;
   margin: 0 auto;
   padding: 0;
@@ -120,24 +130,29 @@ const isPublic = computed(() => PUBLIC_ROUTES.includes(route.path))
   flex-direction: column;
 }
 
-/* Мобильная шапка (Header) - растянута от края до края без щелей */
+/* Мобильная шапка (Header) */
 .topbar {
   position: sticky;
   top: 0;
   z-index: 90;
   width: 100%;
   box-sizing: border-box;
-  min-height: calc(52px + env(safe-area-inset-top, 0px));
-  padding-top: env(safe-area-inset-top, 0px);
-  padding-left: var(--space-4);
-  padding-right: var(--space-4);
-  padding-bottom: 0;
   background: var(--ink);
   color: var(--text-on-ink);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0 var(--space-4);
+}
+
+.topbar-inner {
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
+  min-height: calc(48px + env(safe-area-inset-top, 0px));
+  padding-top: env(safe-area-inset-top, 0px);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  box-sizing: border-box;
 }
 
 .topbar-brand {
@@ -150,16 +165,6 @@ const isPublic = computed(() => PUBLIC_ROUTES.includes(route.path))
   font-size: 15px;
   font-weight: 700;
   letter-spacing: -0.01em;
-}
-
-.max-tag {
-  background: #4f46e5;
-  color: white;
-  font-size: 10px;
-  font-weight: 800;
-  padding: 2px 6px;
-  border-radius: var(--radius-pill);
-  letter-spacing: 0.03em;
 }
 
 .topbar-user {
@@ -211,38 +216,44 @@ const isPublic = computed(() => PUBLIC_ROUTES.includes(route.path))
 /* Область контента */
 .content {
   flex: 1;
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
   padding: var(--space-4);
-  padding-bottom: calc(72px + env(safe-area-inset-bottom, 16px));
+  padding-bottom: calc(80px + env(safe-area-inset-bottom, 16px));
   box-sizing: border-box;
 }
 
-/* Мобильный нижний бар табов (Tabbar) */
+/* Мобильный нижний бар табов (Tabbar) - плотный непрозрачный фон, компактное расположение */
 .tabbar {
   position: fixed;
   bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0;
+  right: 0;
   width: 100%;
-  max-width: 440px;
-  height: calc(56px + env(safe-area-inset-bottom, 0px));
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-top: 1px solid rgba(0, 0, 0, 0.08);
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
   z-index: 100;
+  background: #ffffff;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.07);
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 8px);
+  padding-top: 6px;
   box-sizing: border-box;
 }
 
-@media (max-width: 480px) {
-  .tabbar {
-    max-width: 100%;
-  }
+.tabbar-inner {
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  box-sizing: border-box;
+  padding: 0 4px;
 }
 
 .tab {
+  flex: 1;
+  max-width: 76px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -250,22 +261,24 @@ const isPublic = computed(() => PUBLIC_ROUTES.includes(route.path))
   gap: 2px;
   text-decoration: none;
   color: #64748b;
-  font-size: 10px;
+  font-size: 10.5px;
   font-weight: 600;
-  padding: 4px 0;
+  padding: 4px 2px;
+  border-radius: var(--radius-sm);
   transition: all 0.15s ease;
   -webkit-tap-highlight-color: transparent;
 }
 
 .tab-icon {
-  font-size: 18px;
+  font-size: 19px;
   line-height: 1;
   transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .tab-label {
-  font-size: 10px;
+  font-size: 10.5px;
   letter-spacing: -0.01em;
+  white-space: nowrap;
 }
 
 .tab.is-active {
@@ -273,7 +286,7 @@ const isPublic = computed(() => PUBLIC_ROUTES.includes(route.path))
 }
 
 .tab.is-active .tab-icon {
-  transform: scale(1.15);
+  transform: scale(1.12);
 }
 
 .tab.is-active .tab-label {
