@@ -134,7 +134,7 @@
           class="submit-role-btn"
           @click="confirmRole"
         >
-          Войти в кабинет {{ selectedRole === 'teacher' ? 'преподавателя' : 'обучающегося' }} →
+          Войти в кабинет {{ selectedRole === 'teacher' ? 'преподавателя' : 'обучающегося' }}
         </BaseButton>
       </footer>
     </div>
