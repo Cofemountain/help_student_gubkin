@@ -130,7 +130,7 @@ const isPublic = computed(() => PUBLIC_ROUTES.includes(route.path))
   flex-direction: column;
 }
 
-/* Мобильная шапка (Header) */
+/* Мобильная шапка (Header) - компактная высота и процентное ограничение ширины */
 .topbar {
   position: sticky;
   top: 0;
@@ -140,15 +140,13 @@ const isPublic = computed(() => PUBLIC_ROUTES.includes(route.path))
   background: var(--ink);
   color: var(--text-on-ink);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 0 var(--space-4);
 }
 
 .topbar-inner {
-  width: 100%;
-  max-width: 440px;
+  width: 92%;
+  max-width: 380px;
   margin: 0 auto;
-  min-height: calc(48px + env(safe-area-inset-top, 0px));
-  padding-top: env(safe-area-inset-top, 0px);
+  height: 44px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -162,7 +160,7 @@ const isPublic = computed(() => PUBLIC_ROUTES.includes(route.path))
 }
 
 .brand-title {
-  font-size: 15px;
+  font-size: 14.5px;
   font-weight: 700;
   letter-spacing: -0.01em;
 }
@@ -182,7 +180,7 @@ const isPublic = computed(() => PUBLIC_ROUTES.includes(route.path))
   text-decoration: none;
   font-size: 11px;
   font-weight: 700;
-  padding: 3px 8px;
+  padding: 2px 7px;
   border-radius: var(--radius-pill);
   transition: background 0.15s ease;
 }
@@ -192,15 +190,15 @@ const isPublic = computed(() => PUBLIC_ROUTES.includes(route.path))
 }
 
 .user-avatar {
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   background: #3b82f6;
   color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 800;
   text-decoration: none;
   border: 1.5px solid rgba(255, 255, 255, 0.3);
@@ -213,47 +211,44 @@ const isPublic = computed(() => PUBLIC_ROUTES.includes(route.path))
   object-fit: cover;
 }
 
-/* Область контента */
+/* Область контента - строго 92% с лимитом 380px */
 .content {
   flex: 1;
-  width: 100%;
-  max-width: 440px;
+  width: 92%;
+  max-width: 380px;
   margin: 0 auto;
-  padding: var(--space-4);
-  padding-bottom: calc(80px + env(safe-area-inset-bottom, 16px));
+  padding: var(--space-3) 0;
+  padding-bottom: calc(88px + env(safe-area-inset-bottom, 16px));
   box-sizing: border-box;
 }
 
-/* Мобильный нижний бар табов (Tabbar) - плотный непрозрачный фон, компактное расположение */
+/* Мобильный нижний бар табов (Tabbar) - плавающий остров 92% с лимитом 380px */
 .tabbar {
   position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  width: 100%;
+  bottom: max(env(safe-area-inset-bottom, 8px), 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 92%;
+  max-width: 380px;
   z-index: 100;
   background: #ffffff;
-  border-top: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.07);
-  padding-bottom: max(env(safe-area-inset-bottom, 0px), 8px);
-  padding-top: 6px;
+  border-radius: 20px;
+  box-shadow: 0 6px 24px rgba(15, 23, 42, 0.12), 0 1px 4px rgba(15, 23, 42, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  padding: 5px 6px;
   box-sizing: border-box;
 }
 
 .tabbar-inner {
   width: 100%;
-  max-width: 440px;
-  margin: 0 auto;
   display: flex;
-  justify-content: space-around;
+  justify-content: space-between;
   align-items: center;
   box-sizing: border-box;
-  padding: 0 4px;
 }
 
 .tab {
   flex: 1;
-  max-width: 76px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -261,22 +256,22 @@ const isPublic = computed(() => PUBLIC_ROUTES.includes(route.path))
   gap: 2px;
   text-decoration: none;
   color: #64748b;
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 600;
-  padding: 4px 2px;
+  padding: 4px 0;
   border-radius: var(--radius-sm);
   transition: all 0.15s ease;
   -webkit-tap-highlight-color: transparent;
 }
 
 .tab-icon {
-  font-size: 19px;
+  font-size: 18px;
   line-height: 1;
   transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .tab-label {
-  font-size: 10.5px;
+  font-size: 10px;
   letter-spacing: -0.01em;
   white-space: nowrap;
 }
