@@ -42,7 +42,7 @@
 
     <!-- Сетка ачивок -->
     <section class="achievements-section">
-      <h2>Квалификационный реестр достижений</h2>
+      <h2>🏆 Достижения и награды</h2>
       <div class="achievements-grid">
         <div
           v-for="ach in auth.achievements"

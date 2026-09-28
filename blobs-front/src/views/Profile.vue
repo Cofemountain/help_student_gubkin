@@ -30,8 +30,9 @@
           <h2>{{ auth.currentTitle.fullTitle }}</h2>
           <p class="xp-val">Накопленный рейтинг: <strong>{{ auth.xp }} XP</strong></p>
         </div>
-        <router-link to="/achievements" class="details-link">
-          Квалификационный реестр →
+        <router-link to="/achievements" class="ach-pill-btn">
+          <span class="ach-icon">🏆</span>
+          <span>Достижения</span>
         </router-link>
       </div>
 
@@ -202,7 +203,8 @@ function changeRole(newRole) {
 .ach-summary-top {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
+  gap: 12px;
   margin-bottom: var(--space-3);
 }
 
@@ -219,14 +221,30 @@ function changeRole(newRole) {
   color: var(--ink);
 }
 
-.details-link {
-  font-size: 13px;
-  font-weight: 600;
-  color: #4f46e5;
+.ach-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f8fafc;
+  color: #2563eb;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
   text-decoration: none;
+  border: 1px solid #e2e8f0;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
-.details-link:hover {
-  text-decoration: underline;
+.ach-pill-btn:active {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  transform: scale(0.97);
+}
+.ach-pill-btn .ach-icon {
+  font-size: 14px;
+  line-height: 1;
 }
 
 .progress-labels {
