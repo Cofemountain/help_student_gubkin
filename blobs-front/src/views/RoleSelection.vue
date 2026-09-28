@@ -513,14 +513,18 @@ function confirmRole() {
 
 /* Кнопка подтверждения */
 .portal-footer {
-  margin-top: 2px;
+  margin-top: 6px;
+  display: flex;
+  justify-content: center;
 }
 
 .submit-role-btn {
-  width: 100%;
-  font-size: 15px;
+  width: auto;
+  min-width: 220px;
+  max-width: 90%;
+  font-size: 14px;
   font-weight: 700;
-  padding: 13px 18px;
+  padding: 10px 22px;
   box-shadow: 0 4px 14px rgba(240, 168, 117, 0.35);
 }
 </style>

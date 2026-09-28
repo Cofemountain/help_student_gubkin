@@ -227,22 +227,26 @@ onMounted(() => {
 }
 
 .hero-actions {
-  margin-top: 4px;
+  margin-top: 8px;
+  display: flex;
+  justify-content: center;
 }
 
 .cta-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
+  width: auto;
+  max-width: 92%;
   box-sizing: border-box;
   background: var(--primary);
   color: var(--ink);
-  padding: 10px 18px;
+  padding: 8px 18px;
   border-radius: var(--radius-pill);
   font-weight: 700;
-  font-size: 14px;
+  font-size: 13.5px;
   text-decoration: none;
+  box-shadow: 0 4px 14px rgba(240, 168, 117, 0.3);
   transition: transform 0.15s ease, background 0.15s ease;
 }
 .cta-button:active {
