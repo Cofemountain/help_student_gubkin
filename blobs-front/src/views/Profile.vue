@@ -193,7 +193,8 @@ function changeRole(newRole) {
   background: #fff;
   border-radius: var(--radius-lg);
   border: 1px solid #e6e1d6;
-  padding: var(--space-5);
+  padding: var(--space-4);
+  box-sizing: border-box;
 }
 .card h2 {
   margin: 0 0 var(--space-3);
@@ -305,27 +306,32 @@ function changeRole(newRole) {
 
 .segmented-role-toggle {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   background: #f1f5f9;
-  padding: 4px;
+  padding: 3px;
   border-radius: var(--radius-pill);
-  gap: 4px;
+  gap: 3px;
   border: 1px solid #e2e8f0;
+  box-sizing: border-box;
+  width: 100%;
+  overflow: hidden;
 }
 
 .seg-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 10px 14px;
+  gap: 6px;
+  padding: 8px 6px;
   border: none;
   background: transparent;
   color: #64748b;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   border-radius: var(--radius-pill);
   cursor: pointer;
+  min-width: 0;
+  box-sizing: border-box;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   -webkit-tap-highlight-color: transparent;
 }
@@ -334,12 +340,19 @@ function changeRole(newRole) {
   background: #ffffff;
   color: var(--ink);
   font-weight: 700;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.seg-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .seg-icon {
-  font-size: 16px;
+  font-size: 15px;
   line-height: 1;
+  flex-shrink: 0;
 }
 
 .role-info-banner {
