@@ -1,0 +1,55 @@
+:root {
+  /* поверхности */
+  --bg: #ffffff;            /* основной фон экрана (светлые скрины 1–2) */
+  --surface: #f4f1ea;       /* кремовые «блобы»/подложки (тёмные скрины 3–4) */
+  --ink: #16162b;           /* тёмно-синий: шапки, подвал, кабинет препода */
+  --ink-soft: #2a2a45;      /* чуть светлее ink для панелей */
+  --bg-canvas: #f4f5f7; /* Светло-серый фон рабочего стола */
+
+  /* текст */
+  --text: #16162b;          /* основной текст на светлом */
+  --text-muted: #6b6b7b;    /* вторичный/подсказки */
+  --text-on-ink: #ffffff;   /* текст на тёмном фоне */
+
+  /* акценты и семантика */
+  --primary: #f0a875;       /* персиковая кнопка «Войти»/«Взять» */
+  --primary-press: #e08c52; /* нажатое состояние primary */
+  --accent: #ef7d34;        /* оранжевая точка-акцент / «Срочно» */
+  --danger: #d94848;        /* просроченный дедлайн */
+  --success: #2f9e63;       /* «решено» */
+
+  /* геометрия */
+  --radius-sm: 10px;
+  --radius-lg: 20px;
+  --radius-md: 16px;
+  --radius-pill: 999px;     /* чипсы/таблетки как на скринах */
+  --space-1: 4px;  --space-2: 8px;  --space-3: 12px;
+  --space-4: 16px; --space-5: 24px; --space-6: 32px;
+  --space-7: 40px; --space-8: 48px;
+
+  /* шрифт */
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100%;
+  background: #0f172a;
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior-y: none;
+}
+
+#app {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100%;
+}

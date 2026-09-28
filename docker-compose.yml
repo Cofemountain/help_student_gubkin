@@ -1,0 +1,34 @@
+services:
+  # Сервис 1: Backend API + Static Vue Mini App (FastAPI + Uvicorn)
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: oge_physics_web
+    restart: always
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      # Сохраняем базу данных SQLite и загруженные фото на диске хоста
+      - ./oge_physics.db:/app/oge_physics.db
+      - ./uploads:/app/uploads
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+  # Сервис 2: Демон Long-polling бота МАКС
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: oge_physics_bot
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      # Доступ к общей БД и файлам
+      - ./oge_physics.db:/app/oge_physics.db
+      - ./uploads:/app/uploads
+    command: ["python", "bot_max.py"]
+    depends_on:
+      - web

@@ -1,0 +1,15 @@
+[Unit]
+Description=OGE Physics MAX Messenger Bot Daemon
+After=network.target oge-web.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/var/www/oge_physics
+Environment="PATH=/var/www/oge_physics/venv/bin"
+ExecStart=/var/www/oge_physics/venv/bin/python bot_max.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
