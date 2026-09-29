@@ -663,6 +663,29 @@ async def get_closed_bank_tasks(
 
 
 @router.get(
+    "/bank/tasks/closed",
+    response_model=List[BankTaskStudentResponse],
+    summary="Получить список задач из Закрытого банка (для практики и решения учениками в Mini App)",
+)
+async def get_closed_bank_tasks_for_students(
+    grade: Optional[int] = Query(None, description="Класс: 7, 8, 9"),
+    block: Optional[str] = Query(None, description="Раздел: MECHANICS, THERMODYNAMICS, ELECTRODYNAMICS, QUANTUM, PART_2_ADVANCED"),
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    session: AsyncSession = Depends(get_db),
+):
+    """Возвращает задачи из Закрытого банка (без открытого ответа) для решения и практики в Mini App."""
+    return await crud_bank_task.get_tasks(
+        session=session,
+        grade=grade,
+        block=block,
+        bank_type="CLOSED",
+        limit=limit,
+        offset=offset,
+    )
+
+
+@router.get(
     "/bank/tasks/{task_id}",
     response_model=BankTaskStudentResponse,
     summary="Получить карточку одной задачи",
@@ -696,21 +719,24 @@ async def check_task_answer(
 
     is_correct = (user_clean == correct_clean)
     xp_awarded = 0
+    is_closed = (task.bank_type == "CLOSED")
+    reward = 25 if is_closed else 15
 
     if is_correct:
         if check_in.student_tg_id:
             student = await crud_user.get_by_telegram_id(session, check_in.student_tg_id)
             if student:
-                await award_xp(session, user_id=student.id, amount=15, reason=XPReason.BANK_SOLVED.value, task_id=task.id)
-                xp_awarded = 15
+                await award_xp(session, user_id=student.id, amount=reward, reason=XPReason.BANK_SOLVED.value, task_id=task.id)
+                xp_awarded = reward
                 await session.commit()
 
+        msg = f"🎉 Отлично! Ответ верный. Задача из закрытого банка решена (+{reward} XP)!" if is_closed else "🎉 Отлично! Ответ верный. Вам начислено +15 XP!"
         return CheckAnswerResponse(
             is_correct=True,
             correct_answer=task.answer,
             solution=task.solution,
             xp_awarded=xp_awarded,
-            message="🎉 Отлично! Ответ верный. Вам начислено +15 XP!",
+            message=msg,
         )
     else:
         return CheckAnswerResponse(

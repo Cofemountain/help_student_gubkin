@@ -46,8 +46,18 @@
         @click="activeMode = 'practice'"
       >
         <span class="tab-icon">🎯</span>
-        <span class="tab-title">Экзаменационный практикум</span>
+        <span class="tab-title">Открытый практикум</span>
         <span class="tab-badge-xp">+15 XP</span>
+      </button>
+      <button
+        type="button"
+        class="mode-tab-btn"
+        :class="{ active: activeMode === 'closed' }"
+        @click="switchModeToClosed"
+      >
+        <span class="tab-icon">🔒</span>
+        <span class="tab-title">Закрытый банк задач</span>
+        <span class="tab-badge-xp closed-xp">+25 XP</span>
       </button>
     </div>
 
@@ -321,6 +331,9 @@
               <span class="tag-grade">{{ task.grade }} класс</span>
               <span class="tag-diff" :class="(task.difficulty || '').toLowerCase()">{{ task.difficulty }}</span>
               <span class="tag-topic">{{ task.topic_title }}</span>
+              <span v-if="task.author" class="tag-author">
+                {{ task.author.includes('Камзеева') ? '🏛️' : '📖' }} {{ task.author }}
+              </span>
             </div>
             <span v-if="solvedMap[task.id]" class="solved-badge">✓ Решено (+15 XP)</span>
           </div>
@@ -372,6 +385,15 @@
               </p>
 
               <button
+                type="button"
+                class="create-req-from-task-btn"
+                @click="createRequestFromTask(task)"
+                title="Сформировать заявку на разбор по этой задаче"
+              >
+                ✍️ Сформировать заявку
+              </button>
+
+              <button
                 v-if="solvedMap[task.id] && !showSolution[task.id]"
                 type="button"
                 class="solution-btn"
@@ -382,6 +404,187 @@
               <div v-if="showSolution[task.id]" class="solution-text">
                 <strong>Эталонное решение:</strong>
                 <p>{{ task.solution || results[task.id]?.solution || 'Решение доступно в материалах темы.' }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- РЕЖИМ 3: ЗАКРЫТЫЙ БАНК ЗАДАЧ (АНТИ-ГДЗ, ДЗ И ПРОВЕРОЧНЫЕ)    -->
+    <!-- ============================================================ -->
+    <section v-if="activeMode === 'closed'" class="practice-section closed-section">
+      <div class="closed-banner-alert">
+        <span class="cba-icon">🔒</span>
+        <div class="cba-content">
+          <strong>Закрытый банк задач ОГЭ и контрольных заданий</strong>
+          <p>Задачи без готовых решений в сети из сборников А. В. Перышкина и ФИПИ Е. Е. Камзеевой. Решайте самостоятельно для проверки своих сил (+25 XP) или сформируйте заявку на консультацию с преподавателем.</p>
+        </div>
+      </div>
+
+      <div class="practice-filters">
+        <div class="filter-group">
+          <span class="filter-label">Класс:</span>
+          <div class="grade-chips">
+            <button
+              class="chip-btn"
+              :class="{ active: closedGrade === null }"
+              @click="selectClosedGrade(null)"
+            >
+              Все классы
+            </button>
+            <button
+              v-for="g in [7, 8, 9]"
+              :key="g"
+              class="chip-btn"
+              :class="{ active: closedGrade === g }"
+              @click="selectClosedGrade(g)"
+            >
+              {{ g }} класс
+            </button>
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <span class="filter-label">Раздел:</span>
+          <div class="block-chips">
+            <button
+              class="chip-btn sm"
+              :class="{ active: closedBlock === null }"
+              @click="selectClosedBlock(null)"
+            >
+              Все темы
+            </button>
+            <button
+              v-for="b in blocks"
+              :key="b.key"
+              class="chip-btn sm"
+              :class="{ active: closedBlock === b.key }"
+              @click="selectClosedBlock(b.key)"
+            >
+              {{ b.label }}
+            </button>
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <span class="filter-label">Сложность:</span>
+          <div class="diff-chips">
+            <button
+              class="chip-btn xs"
+              :class="{ active: selectedClosedDifficulty === null }"
+              @click="selectedClosedDifficulty = null"
+            >
+              Все
+            </button>
+            <button
+              v-for="d in ['Базовый', 'Средний', 'Повышенный']"
+              :key="d"
+              class="chip-btn xs"
+              :class="{ active: selectedClosedDifficulty === d }"
+              @click="selectedClosedDifficulty = d"
+            >
+              {{ d }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="loadingClosed" class="loader-box">
+        <div class="spinner"></div>
+        <p>Загрузка задач из закрытого банка...</p>
+      </div>
+
+      <div v-else-if="filteredClosedTasks.length === 0" class="empty-box">
+        <p>В закрытом банке по выбранным фильтрам пока нет задач.</p>
+      </div>
+
+      <div v-else class="tasks-list">
+        <div
+          v-for="task in filteredClosedTasks"
+          :key="task.id"
+          class="task-card closed-task-card"
+          :class="{ 'is-solved': closedSolvedMap[task.id] }"
+        >
+          <div class="task-header">
+            <div class="task-tags">
+              <span class="tag-grade">{{ task.grade }} класс</span>
+              <span class="tag-diff" :class="(task.difficulty || '').toLowerCase()">{{ task.difficulty }}</span>
+              <span class="tag-topic">{{ task.topic_title }}</span>
+              <span v-if="task.author" class="tag-author">
+                {{ task.author.includes('Камзеева') ? '🏛️' : '📖' }} {{ task.author }}
+              </span>
+            </div>
+            <span v-if="closedSolvedMap[task.id]" class="solved-badge closed-solved">✓ Решено верно (+25 XP)</span>
+          </div>
+
+          <h3 class="task-title">{{ task.title }}</h3>
+          <p class="task-statement">{{ task.statement }}</p>
+
+          <!-- Блок проверки ответа на закрытую задачу -->
+          <div class="answer-box">
+            <div v-if="!closedSolvedMap[task.id]" class="input-row">
+              <input
+                v-model="closedAnswers[task.id]"
+                type="text"
+                placeholder="Ваш числовой ответ..."
+                class="answer-input"
+                @keyup.enter="checkClosedTask(task)"
+              />
+              <button
+                type="button"
+                class="check-btn closed-check-btn"
+                :disabled="closedChecking[task.id] || !closedAnswers[task.id]"
+                @click="checkClosedTask(task)"
+              >
+                {{ closedChecking[task.id] ? '...' : 'Проверить ответ' }}
+              </button>
+            </div>
+
+            <!-- Результат проверки -->
+            <div
+              v-if="closedResults[task.id]"
+              class="result-message"
+              :class="{ success: closedResults[task.id].is_correct, error: !closedResults[task.id].is_correct }"
+            >
+              {{ closedResults[task.id].message }}
+            </div>
+
+            <!-- Подсказка / Решение / Сформировать заявку -->
+            <div class="task-actions-row">
+              <button
+                v-if="task.hint && !closedShowHint[task.id]"
+                type="button"
+                class="hint-btn"
+                @click="closedShowHint[task.id] = true"
+              >
+                💡 Подсказка
+              </button>
+              <p v-if="closedShowHint[task.id]" class="hint-text">
+                <strong>Подсказка:</strong> {{ task.hint }}
+              </p>
+
+              <button
+                type="button"
+                class="create-req-from-task-btn"
+                @click="createRequestFromTask(task)"
+                title="Сформировать заявку на разбор по этой задаче"
+              >
+                ✍️ Сформировать заявку
+              </button>
+
+              <button
+                v-if="closedSolvedMap[task.id] && !closedShowSolution[task.id]"
+                type="button"
+                class="solution-btn"
+                @click="closedShowSolution[task.id] = true"
+              >
+                📖 Показать авторское решение
+              </button>
+              <div v-if="closedShowSolution[task.id]" class="solution-text">
+                <strong>Эталонное решение и ход вычислений:</strong>
+                <p>{{ task.solution || closedResults[task.id]?.solution || 'Решение доступно после проверки.' }}</p>
               </div>
             </div>
           </div>
@@ -536,12 +739,14 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { api } from '../services/api'
 import { useAuthStore } from '../stores/auth'
 
+const router = useRouter()
 const auth = useAuthStore()
 
-// Режим: 'solved' (База разобранных задач) или 'practice' (Тренажер ФИПИ)
+// Режим: 'solved' (База разобранных задач), 'practice' (Открытый банк) или 'closed' (Закрытый банк)
 const activeMode = ref('solved')
 
 const blocks = [
@@ -871,6 +1076,112 @@ async function checkPracticeTask(task) {
   } finally {
     checking[task.id] = false
   }
+}
+
+// --- Логика Закрытого банка задач ---
+const closedTasks = ref([])
+const loadingClosed = ref(false)
+const closedGrade = ref(null)
+const closedBlock = ref(null)
+const selectedClosedDifficulty = ref(null)
+const closedAnswers = reactive({})
+const closedChecking = reactive({})
+const closedResults = reactive({})
+const closedSolvedMap = reactive({})
+const closedShowHint = reactive({})
+const closedShowSolution = reactive({})
+
+function switchModeToClosed() {
+  activeMode.value = 'closed'
+  if (closedTasks.value.length === 0) {
+    loadClosedTasks()
+  }
+}
+
+function selectClosedGrade(g) {
+  closedGrade.value = g
+  loadClosedTasks()
+}
+
+function selectClosedBlock(b) {
+  closedBlock.value = b
+  loadClosedTasks()
+}
+
+async function loadClosedTasks() {
+  loadingClosed.value = true
+  try {
+    const data = await api.getClosedBankTasksForStudents(closedGrade.value, closedBlock.value)
+    closedTasks.value = data || []
+  } catch (e) {
+    console.warn('Не удалось загрузить задачи закрытого банка:', e)
+    closedTasks.value = []
+  } finally {
+    loadingClosed.value = false
+  }
+}
+
+const filteredClosedTasks = computed(() => {
+  if (!selectedClosedDifficulty.value) return closedTasks.value
+  return closedTasks.value.filter(
+    (t) => (t.difficulty || '').toLowerCase() === selectedClosedDifficulty.value.toLowerCase()
+  )
+})
+
+async function checkClosedTask(task) {
+  const ans = closedAnswers[task.id]
+  if (!ans || closedChecking[task.id]) return
+
+  closedChecking[task.id] = true
+  try {
+    const studentTgId = auth.telegramId || auth.userId
+    const res = await api.checkAnswer(task.id, ans, studentTgId)
+    closedResults[task.id] = res
+
+    if (res.is_correct) {
+      closedSolvedMap[task.id] = true
+      practiceSolvedCount.value += 1
+      earnedXp.value += 25
+      auth.addXp(25, 'closed_bank_solved')
+      closedShowSolution[task.id] = true
+    }
+  } catch (e) {
+    console.error('Ошибка проверки задачи закрытого банка:', e)
+    const normUser = String(ans).trim().toLowerCase().replace(',', '.')
+    const normTarget = String(task.answer || '').trim().toLowerCase().replace(',', '.')
+    const isCorrect = normUser === normTarget
+
+    closedResults[task.id] = {
+      is_correct: isCorrect,
+      message: isCorrect
+        ? '🎉 Верно! Задача из закрытого банка решена (+25 XP)!'
+        : '❌ Ответ не совпадает с эталоном. Попробуйте пересчитать или обратитесь за помощью к преподавателю.',
+      solution: task.solution,
+    }
+
+    if (isCorrect) {
+      closedSolvedMap[task.id] = true
+      practiceSolvedCount.value += 1
+      earnedXp.value += 25
+      auth.addXp(25, 'closed_bank_solved')
+      closedShowSolution[task.id] = true
+    }
+  } finally {
+    closedChecking[task.id] = false
+  }
+}
+
+function createRequestFromTask(task) {
+  const authorText = task.author ? ` (Источник: ${task.author})` : ''
+  const queryText = `[${task.title}] ${task.statement}${authorText}`
+  router.push({
+    path: '/create-request',
+    query: {
+      grade: task.grade,
+      block: task.block,
+      text: queryText,
+    }
+  })
 }
 </script>
 
@@ -2076,5 +2387,89 @@ async function checkPracticeTask(task) {
   .sm-body {
     padding: 14px 16px;
   }
+}
+
+/* ЗАКРЫТЫЙ БАНК И АВТОРСТВО */
+.closed-banner-alert {
+  background: #fefce8;
+  border: 1.5px solid #facc15;
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: var(--space-3);
+}
+.cba-icon {
+  font-size: 24px;
+  line-height: 1;
+}
+.cba-content strong {
+  display: block;
+  font-size: 14px;
+  color: #854d0e;
+  margin-bottom: 3px;
+}
+.cba-content p {
+  margin: 0;
+  font-size: 12.5px;
+  color: #713f12;
+  line-height: 1.45;
+}
+
+.closed-badge {
+  background: #fef08a !important;
+  color: #854d0e !important;
+  font-weight: 800 !important;
+}
+
+.tag-author {
+  background: #f8fafc;
+  color: #1e293b;
+  font-weight: 700;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.closed-task-card {
+  border-left: 4px solid #eab308 !important;
+}
+
+.closed-solved {
+  background: #fef08a !important;
+  color: #854d0e !important;
+  font-weight: 800;
+}
+
+.closed-check-btn {
+  background: #eab308 !important;
+  color: #713f12 !important;
+  font-weight: 800;
+}
+.closed-check-btn:hover:not(:disabled) {
+  background: #ca8a04 !important;
+  color: white !important;
+}
+
+.create-req-from-task-btn {
+  background: #f0fdf4;
+  color: #166534;
+  border: 1.5px solid #bbf7d0;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 7px 14px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.create-req-from-task-btn:hover {
+  background: #dcfce7;
+  border-color: #86efac;
 }
 </style>

@@ -182,7 +182,7 @@
         class="submit-btn"
         :disabled="loading || !isValid"
       >
-        {{ loading ? 'Регистрация заявки...' : (formData.requestType === 'TELEMOST' ? '📹 Зарегистрировать заявку на Телемост' : '🚀 Зарегистрировать заявку на разбор') }}
+        {{ loading ? 'Регистрация заявки...' : (formData.requestType === 'TELEMOST' ? '📹 Зарегистрировать заявку на Телемост' : 'Зарегистрировать заявку на разбор') }}
       </BaseButton>
     </form>
   </div>
@@ -190,13 +190,14 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import BaseChip from '../components/BaseChip.vue'
 import BaseButton from '../components/BaseButton.vue'
 import { api } from '../services/api'
 import { useAuthStore } from '../stores/auth'
 
 const router = useRouter()
+const route = useRoute()
 const auth = useAuthStore()
 
 // 1. Выбранный класс: 7, 8 или 9 (по умолчанию 9 класс)
@@ -338,6 +339,14 @@ onMounted(async () => {
   }
 
   updateInitialTopic()
+
+  if (route.query.grade) {
+    const g = Number(route.query.grade)
+    if ([7, 8, 9].includes(g)) selectedGrade.value = g
+  }
+  if (route.query.text) {
+    formData.question = String(route.query.text)
+  }
 })
 
 const filteredTopics = computed(() => {

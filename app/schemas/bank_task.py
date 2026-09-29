@@ -12,6 +12,7 @@ class BankTaskBase(BaseModel):
     statement: str
     difficulty: str
     hint: Optional[str] = None
+    author: Optional[str] = None
 
 
 class BankTaskStudentResponse(BankTaskBase):

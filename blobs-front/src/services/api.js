@@ -175,6 +175,13 @@ export const api = {
     return request(`/bank/tasks/tutor?${params.toString()}`)
   },
 
+  getClosedBankTasksForStudents: (grade = null, block = null, limit = 50, offset = 0) => {
+    const params = new URLSearchParams({ limit, offset })
+    if (grade) params.append('grade', grade)
+    if (block) params.append('block', block)
+    return request(`/bank/tasks/closed?${params.toString()}`)
+  },
+
   getBankTaskById: (taskId) => {
     return request(`/bank/tasks/${taskId}`)
   },

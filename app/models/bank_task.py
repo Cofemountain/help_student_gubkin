@@ -29,6 +29,7 @@ class BankTask(Base, TimestampMixin):
     answer: Mapped[str] = mapped_column(String(128), nullable=False)
     solution: Mapped[str] = mapped_column(Text, nullable=False)
     hint: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    author: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)  # Авторство (Перышкин, Камзеева ФИПИ)
 
     def __repr__(self) -> str:
         return f"<BankTask id={self.id} grade={self.grade} block={self.block} type={self.bank_type} title='{self.title[:20]}'>"

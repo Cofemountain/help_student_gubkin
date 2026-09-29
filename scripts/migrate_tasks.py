@@ -30,8 +30,14 @@ def migrate(db_path='oge_physics.db'):
         cur.execute("ALTER TABLE homeworks ADD COLUMN bank_task_id INTEGER")
         print("Added bank_task_id to homeworks")
         
+    bt_cols = [col[1] for col in cur.execute('PRAGMA table_info(bank_tasks)').fetchall()]
+    if 'author' not in bt_cols:
+        cur.execute("ALTER TABLE bank_tasks ADD COLUMN author VARCHAR(255) DEFAULT ''")
+        print("Added author to bank_tasks")
+
     con.commit()
-    print("Migration finished. Columns:", [col[1] for col in cur.execute('PRAGMA table_info(tasks)').fetchall()])
+    print("Migration finished. Tasks Columns:", [col[1] for col in cur.execute('PRAGMA table_info(tasks)').fetchall()])
+    print("Bank Tasks Columns:", [col[1] for col in cur.execute('PRAGMA table_info(bank_tasks)').fetchall()])
 
 if __name__ == '__main__':
     import sys
