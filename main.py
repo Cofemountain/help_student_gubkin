@@ -44,6 +44,12 @@ uploads_dir = Path(__file__).resolve().parent / "uploads"
 uploads_dir.mkdir(exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=str(uploads_dir)), name="uploads")
 
+NO_CACHE_HEADERS = {
+    "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
+    "Pragma": "no-cache",
+    "Expires": "0",
+}
+
 # Раздача фронтенда (blobs-front/dist)
 dist_dir = Path(__file__).resolve().parent / "blobs-front" / "dist"
 if dist_dir.exists():
@@ -53,7 +59,7 @@ if dist_dir.exists():
 
     @app.get("/", summary="Главная страница Mini App")
     async def serve_root():
-        return FileResponse(dist_dir / "index.html")
+        return FileResponse(dist_dir / "index.html", headers=NO_CACHE_HEADERS)
 
     @app.get("/favicon.svg")
     async def favicon():
@@ -74,8 +80,10 @@ if dist_dir.exists():
             raise HTTPException(status_code=404, detail="Not Found")
         target_file = dist_dir / full_path
         if full_path and target_file.is_file():
+            if target_file.suffix == ".html":
+                return FileResponse(target_file, headers=NO_CACHE_HEADERS)
             return FileResponse(target_file)
-        return FileResponse(dist_dir / "index.html")
+        return FileResponse(dist_dir / "index.html", headers=NO_CACHE_HEADERS)
 else:
     @app.get("/", summary="Healthcheck")
     async def root():
