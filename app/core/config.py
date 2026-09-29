@@ -5,6 +5,7 @@ from typing import Optional
 class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite+aiosqlite:///./oge_physics.db"
     MAX_BOT_TOKEN: Optional[str] = None
+    YANDEX_OAUTH_TOKEN: Optional[str] = None
     DEBUG: bool = True
 
     model_config = SettingsConfigDict(

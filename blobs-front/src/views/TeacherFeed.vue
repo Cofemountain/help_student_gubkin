@@ -164,6 +164,8 @@ async function loadFeed() {
       telemostUrl: t.telemost_url || '',
       teacherResponse: t.teacher_response || '',
       student: t.student,
+      createdAt: t.created_at,
+      created_at: t.created_at,
     }))
   } catch (e) {
     console.warn('Сервер вернул ошибку, загружаем демо-ленту заявок:', e)
@@ -239,6 +241,8 @@ async function loadMyRequests() {
       telemostUrl: t.telemost_url || '',
       teacherResponse: t.teacher_response || '',
       student: t.student,
+      createdAt: t.created_at,
+      created_at: t.created_at,
     }))
   } catch (e) {
     console.warn('Не удалось загрузить мои заявки:', e)
@@ -268,15 +272,19 @@ onMounted(() => {
 })
 
 const filteredRequests = computed(() => {
-  return allRequests.value.filter((req) => {
-    const matchBlock = activeBlock.value === 'ALL' || req.block === activeBlock.value
-    const matchGrade = activeGrade.value === 'ALL' || req.grade === activeGrade.value
-    return matchBlock && matchGrade
-  })
+  return allRequests.value
+    .filter((req) => {
+      const matchBlock = activeBlock.value === 'ALL' || req.block === activeBlock.value
+      const matchGrade = activeGrade.value === 'ALL' || req.grade === activeGrade.value
+      return matchBlock && matchGrade
+    })
+    .slice()
+    .sort((a, b) => (b.id || 0) - (a.id || 0))
 })
 
 const currentList = computed(() => {
-  return viewMode.value === 'my' ? myRequests.value : filteredRequests.value
+  const list = viewMode.value === 'my' ? myRequests.value : filteredRequests.value
+  return list.slice().sort((a, b) => (b.id || 0) - (a.id || 0))
 })
 
 function setFilter(blockKey) {

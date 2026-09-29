@@ -466,11 +466,13 @@ async def handle_show_tutor_board(client: MaxBotClient, user_id: int):
         author_name = task.student.first_name if task.student else "Ученик"
         author_tag = f"@{task.student.username}" if (task.student and task.student.username) else "тег не указан"
 
+        created_str = task.created_at.strftime("%d.%m в %H:%M") if task.created_at else "недавно"
         card_text = (
             f"📌 Заявка #{task.id}\n"
             f"• Раздел/Тема: {topic_title}\n"
             f"• Ученик: {author_name} ({author_tag})\n"
             f"• Вопрос: {task.question}\n"
+            f"• Создано: {created_str}\n"
             f"• Желаемое время: {task.scheduled_time}\n"
             f"• Награда: +100 XP и повышение звания"
         )
@@ -507,11 +509,13 @@ async def handle_show_tutor_sessions(client: MaxBotClient, user_id: int):
         telemost_link = task_telemost_links.get(t.id) or (t.telemost_url if t.telemost_url and "jit.si" not in t.telemost_url else None)
         telemost_status = "\n• Видеозвонок: создан" if telemost_link else ""
 
+        created_str = t.created_at.strftime("%d.%m в %H:%M") if t.created_at else "недавно"
         desc = (
             f"📌 Задача #{t.id} — {st}\n"
             f"• Ученик: {s_name}\n"
             f"• Тема: {t.topic.title if t.topic else 'Физика'}\n"
             f"• Вопрос: {t.question}\n"
+            f"• Создано: {created_str}\n"
             f"• Время: {t.scheduled_time}{telemost_status}\n\n"
             f"👇 Выберите действие для связи с учеником:"
         )
@@ -558,10 +562,12 @@ async def handle_show_my_tasks(client: MaxBotClient, user_id: int):
             tutor_name = t.tutor.first_name
             tutor_info = f"\n• Преподаватель: {tutor_name}"
 
+        created_str = t.created_at.strftime("%d.%m в %H:%M") if t.created_at else "недавно"
         task_desc = (
             f"📌 Заявка #{t.id} — {st}\n"
             f"• Тема: {t_title}\n"
             f"• Вопрос: {t.question}\n"
+            f"• Создано: {created_str}\n"
             f"• Время: {t.scheduled_time}{tutor_info}"
         )
 
@@ -697,18 +703,13 @@ async def handle_telemost_menu(client: MaxBotClient, callback_id: str, user_id: 
     }
 
     text = (
-        f"📹 Организация видеозвонка по задаче #{task_id}\n\n"
-        f"Выберите способ связи:\n\n"
-        f"1️⃣ Яндекс Телемост:\n"
-        f"• Нажмите «🌐 Открыть Яндекс Телемост» и нажмите «Создать встречу»\n"
-        f"• Скопируйте ссылку (вида https://telemost.yandex.ru/j/...) и пришлите сюда в чат\n"
-        f"• Бот мгновенно перешлет её собеседнику с кнопкой прямого входа!\n\n"
-        f"2️⃣ Быстрый видеозвонок (в 1 клик без ручного создания ссылок):\n"
-        f"• Нажмите «⚡️ Быстрая комната (1 клик)» — комната сразу создастся для вас обоих!"
+        f"📹 Организация видеозвонка в Яндекс Телемосте по задаче #{task_id}\n\n"
+        f"1️⃣ Нажмите «🌐 Создать встречу в Телемосте» ниже (в открывшемся окне Яндекса нажмите желтую кнопку «Создать встречу»).\n"
+        f"2️⃣ Скопируйте ссылку встречи (вида https://telemost.yandex.ru/j/...) и отправьте сюда в чат.\n\n"
+        f"Бот мгновенно перешлет ссылку ученику с кнопкой прямого подключения к звонку!"
     )
     buttons = [
-        [btn_link("🌐 Открыть Яндекс Телемост", "https://telemost.yandex.ru/")],
-        [btn_callback("⚡️ Быстрая комната (1 клик)", f"quick_call:{task_id}")],
+        [btn_link("🌐 Создать встречу в Телемосте", "https://telemost.yandex.ru/")],
         [btn_callback("❌ Отмена", "menu:tutor_sessions")],
     ]
     await client.send_message(user_id=user_id, text=text, buttons=buttons)

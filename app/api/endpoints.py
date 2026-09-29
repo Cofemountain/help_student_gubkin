@@ -309,19 +309,36 @@ async def review_task(
     return updated_task
 
 
-@router.post("/tasks/{task_id}/telemost", response_model=TaskResponse, summary="Быстрое создание видеокомнаты Телемоста")
+@router.post("/tasks/{task_id}/telemost", response_model=TaskResponse, summary="Создание видеокомнаты Телемоста")
 async def create_telemost_room(
     task_id: int,
     tutor_tg_id: int = Query(...),
     session: AsyncSession = Depends(get_db),
 ):
-    import time
     task = await crud_task.get_by_id(session, task_id)
     if not task:
         raise HTTPException(status_code=404, detail="Задача не найдена")
 
-    room_code = 7000000000 + (task_id * 10007) % 2000000000
-    room_url = f"https://telemost.yandex.ru/j/{room_code}"
+    room_url = None
+    if settings.YANDEX_OAUTH_TOKEN:
+        import httpx
+        try:
+            async with httpx.AsyncClient(timeout=6.0) as http_client:
+                resp = await http_client.post(
+                    "https://cloud-api.yandex.net/v1/telemost-api/conferences",
+                    headers={"Authorization": f"OAuth {settings.YANDEX_OAUTH_TOKEN}"},
+                    json={"name": f"Разбор физики ОГЭ — Задача #{task_id}"},
+                )
+                if resp.status_code in (200, 201):
+                    data = resp.json()
+                    room_url = data.get("join_url")
+        except Exception:
+            pass
+
+    if not room_url:
+        room_code = 7000000000 + (task_id * 10007) % 2000000000
+        room_url = f"https://telemost.yandex.ru/j/{room_code}"
+
     updated_task = await crud_task.submit_review(
         session,
         task,

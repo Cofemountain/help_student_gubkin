@@ -65,41 +65,48 @@
 
     <!-- Подвал карточки в ленте -->
     <div class="card-footer" @click.stop>
-      <!-- Преподаватель: Взять задачу (ТОЛЬКО если НЕ своя заявка) -->
-      <template v-if="isOpen && isTeacher && !isOwnTask">
-        <button type="button" class="action-btn take-btn" :disabled="taking" @click="handleTake">
-          <span v-if="taking">⏳ Беру...</span>
-          <span v-else>🤝 Взять на разбор</span>
-          <span class="xp-tag">+25 XP</span>
-        </button>
-      </template>
-
-      <!-- Если заявка создана текущим пользователем -->
-      <span v-if="isOpen && isOwnTask" class="student-hint own-task-pill">
-        👤 Ваша заявка (ожидает преподавателя)
+      <!-- Время создания заявки снизу слева -->
+      <span class="card-created-time" :title="formattedFullTime">
+        🕒 {{ formattedShortTime }}
       </span>
 
-      <!-- Ученик (не преподаватель): Ожидание -->
-      <span v-else-if="isOpen && !isTeacher" class="student-hint">
-        ⏳ Ожидает преподавателя
-      </span>
+      <div class="card-footer-actions">
+        <!-- Преподаватель: Взять задачу (ТОЛЬКО если НЕ своя заявка) -->
+        <template v-if="isOpen && isTeacher && !isOwnTask">
+          <button type="button" class="action-btn take-btn" :disabled="taking" @click="handleTake">
+            <span v-if="taking">⏳ Беру...</span>
+            <span v-else>🤝 Взять на разбор</span>
+            <span class="xp-tag">+25 XP</span>
+          </button>
+        </template>
 
-      <!-- Преподаватель: В работе -> Кнопка открыть карточку для ввода/дополнения решения -->
-      <template v-if="isInProgress && isTeacher">
-        <button type="button" class="action-btn answer-btn" @click="openDetailModal">
-          ✍️ {{ isTelemost ? '📞 Итоги звонка / ДЗ' : (teacherResponseText ? '📝 Дополнить разбор' : '✍️ Вписать решение') }}
-        </button>
-      </template>
+        <!-- Если заявка создана текущим пользователем -->
+        <span v-if="isOpen && isOwnTask" class="student-hint own-task-pill">
+          👤 Ваша заявка (ожидает преподавателя)
+        </span>
 
-      <!-- Ученик: В работе -> Проверить ответ / Закрыть заявку -->
-      <template v-if="isInProgress && !isTeacher">
-        <button type="button" class="action-btn check-solution-btn" @click="openDetailModal">
-          <span v-if="teacherResponseText || telemostLink">🎓 Проверить решение преподавателя</span>
-          <span v-else>⏳ В работе у преподавателя</span>
-        </button>
-      </template>
+        <!-- Ученик (не преподаватель): Ожидание -->
+        <span v-else-if="isOpen && !isTeacher" class="student-hint">
+          ⏳ Ожидает преподавателя
+        </span>
 
-      <span v-if="isCompleted" class="completed-label">✓ Вопрос решён</span>
+        <!-- Преподаватель: В работе -> Кнопка открыть карточку для ввода/дополнения решения -->
+        <template v-if="isInProgress && isTeacher">
+          <button type="button" class="action-btn answer-btn" @click="openDetailModal">
+            ✍️ {{ isTelemost ? '📞 Итоги звонка / ДЗ' : (teacherResponseText ? '📝 Дополнить разбор' : '✍️ Вписать решение') }}
+          </button>
+        </template>
+
+        <!-- Ученик: В работе -> Проверить ответ / Закрыть заявку -->
+        <template v-if="isInProgress && !isTeacher">
+          <button type="button" class="action-btn check-solution-btn" @click="openDetailModal">
+            <span v-if="teacherResponseText || telemostLink">🎓 Проверить решение преподавателя</span>
+            <span v-else>⏳ В работе у преподавателя</span>
+          </button>
+        </template>
+
+        <span v-if="isCompleted" class="completed-label">✓ Вопрос решён</span>
+      </div>
     </div>
 
     <!-- ======================================================== -->
@@ -149,6 +156,10 @@
           <!-- Метаданные -->
           <div class="modal-meta-grid">
             <div class="meta-cell">
+              <span class="meta-label">Время создания</span>
+              <span class="meta-val">🕒 {{ formattedFullTime }}</span>
+            </div>
+            <div class="meta-cell">
               <span class="meta-label">Срок разбора</span>
               <span class="meta-val">🕒 {{ request.scheduled_time || request.scheduledTime || 'Как можно скорее' }}</span>
             </div>
@@ -179,30 +190,30 @@
               <div class="tm-details">
                 <strong>Индивидуальная видеоконсультация в Яндекс Телемосте</strong>
                 <p v-if="telemostLink">Комната Яндекс Телемост готова. Нажмите для входа в видеозвонок:</p>
-                <p v-else>Создайте комнату для созвона с учеником в Яндекс Телемосте:</p>
+                <div v-else class="tm-instruction-box">
+                  <p class="tm-step">1️⃣ Нажмите <strong>«Создать встречу в Телемосте»</strong> (в открывшемся окне Яндекса нажмите желтую кнопку «Создать встречу»).</p>
+                  <p class="tm-step">2️⃣ Вставьте скопированную ссылку сюда и нажмите <strong>«Прикрепить ссылку»</strong> — ученик сразу получит кнопку прямого входа!</p>
+                </div>
                 <div class="tm-actions-row">
                   <a v-if="telemostLink" :href="telemostLink" target="_blank" rel="noopener" class="tm-connect-btn">
                     📹 Подключиться к Яндекс Телемосту
                   </a>
-                  <button v-else type="button" class="tm-create-btn" @click="generateQuickRoom">
-                    ⚡ Создать встречу в 1 клик
-                  </button>
-                  <a href="https://telemost.yandex.ru/" target="_blank" rel="noopener" class="tm-open-link-btn">
-                    🌐 Открыть Яндекс Телемост
+                  <a v-else href="https://telemost.yandex.ru/" target="_blank" rel="noopener" class="tm-open-link-btn primary" @click="showTelemostInput = true">
+                    🌐 Создать встречу в Телемосте
                   </a>
                   <button v-if="isTeacher" type="button" class="tm-edit-link-btn" @click="showTelemostInput = !showTelemostInput">
-                    {{ showTelemostInput ? '✕ Закрыть ввод' : (telemostLink ? '🔄 Изменить ссылку' : '🔗 Вставить свою ссылку') }}
+                    {{ showTelemostInput ? '✕ Скрыть ввод' : (telemostLink ? '🔄 Изменить ссылку' : '🔗 Вставить ссылку встречи') }}
                   </button>
                 </div>
-                <div v-if="isTeacher && showTelemostInput" class="tm-custom-input-box">
+                <div v-if="isTeacher && (showTelemostInput || !telemostLink)" class="tm-custom-input-box">
                   <input
                     v-model="customTelemostInput"
                     type="text"
-                    placeholder="https://telemost.yandex.ru/j/..."
+                    placeholder="Вставьте ссылку https://telemost.yandex.ru/j/..."
                     class="tm-custom-input"
                   />
                   <button type="button" class="tm-save-custom-btn" @click="saveCustomTelemost">
-                    💾 Сохранить
+                    💾 Прикрепить ссылку
                   </button>
                 </div>
               </div>
@@ -545,6 +556,44 @@ const telemostLink = computed(() => {
   }
   return url
 })
+const formattedShortTime = computed(() => {
+  const raw = props.request.created_at || props.request.createdAt
+  if (!raw) return 'Недавно'
+  try {
+    const d = new Date(raw)
+    if (isNaN(d.getTime())) return 'Недавно'
+    const now = new Date()
+    const isToday = d.toDateString() === now.toDateString()
+    const hours = String(d.getHours()).padStart(2, '0')
+    const mins = String(d.getMinutes()).padStart(2, '0')
+    if (isToday) {
+      return `Создано сегодня в ${hours}:${mins}`
+    }
+    const day = String(d.getDate()).padStart(2, '0')
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    return `Создано ${day}.${month} в ${hours}:${mins}`
+  } catch {
+    return 'Недавно'
+  }
+})
+
+const formattedFullTime = computed(() => {
+  const raw = props.request.created_at || props.request.createdAt
+  if (!raw) return 'Время создания не указано'
+  try {
+    const d = new Date(raw)
+    if (isNaN(d.getTime())) return 'Время не указано'
+    return d.toLocaleString('ru-RU', {
+      day: '2-digit',
+      month: 'long',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  } catch {
+    return 'Время не указано'
+  }
+})
+
 const showTelemostInput = ref(false)
 const customTelemostInput = ref('')
 
@@ -1056,7 +1105,34 @@ function confirmCompleted() {
 }
 .check-solution-btn:hover { background: #4338ca; }
 
-.card-footer { display: flex; justify-content: flex-end; align-items: center; gap: 8px; border-top: 1px solid #f1f5f9; padding-top: 10px; flex-wrap: wrap; }
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 10px;
+  flex-wrap: wrap;
+}
+.card-created-time {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #f8fafc;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+.card-footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
 .action-btn { border: none; font-family: inherit; font-size: 12px; font-weight: 700; padding: 8px 14px; border-radius: 100px; cursor: pointer; transition: all 0.15s ease; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
 .take-btn { background: #ef7d34; color: white; box-shadow: 0 2px 8px rgba(239,125,52,0.35); }
 .take-btn:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -1329,15 +1405,25 @@ function confirmCompleted() {
   border-radius: 100px;
   cursor: pointer;
 }
-.tm-open-link-btn {
-  background: #f1f5f9;
-  color: #1e293b;
-  text-decoration: none;
-  font-size: 12px;
-  font-weight: 600;
+.tm-instruction-box {
+  background: #ffffff;
+  border-radius: 8px;
   padding: 8px 12px;
-  border-radius: 100px;
-  border: 1px solid #cbd5e1;
+  margin: 6px 0 10px;
+  border-left: 3px solid #3b82f6;
+  border: 1px solid #bfdbfe;
+}
+.tm-step {
+  margin: 4px 0 !important;
+  font-size: 12px !important;
+  color: #1e293b !important;
+  line-height: 1.4 !important;
+}
+.tm-open-link-btn.primary {
+  background: #2563eb;
+  color: white;
+  border: none;
+  font-weight: 700;
 }
 .tm-edit-link-btn {
   background: transparent;

@@ -79,7 +79,7 @@ class CRUDTask:
                 selectinload(Task.student),
                 selectinload(Task.tutor),
             )
-            .order_by(Task.created_at.desc())
+            .order_by(Task.id.desc(), Task.created_at.desc())
         )
 
         if status:
@@ -109,7 +109,7 @@ class CRUDTask:
                 selectinload(Task.homework),
             )
             .where(Task.student_id == student_id)
-            .order_by(Task.created_at.desc())
+            .order_by(Task.id.desc(), Task.created_at.desc())
         )
         if status:
             query = query.where(Task.status == status)
@@ -132,7 +132,7 @@ class CRUDTask:
                 selectinload(Task.homework),
             )
             .where(Task.tutor_id == tutor_id)
-            .order_by(Task.created_at.desc())
+            .order_by(Task.id.desc(), Task.created_at.desc())
         )
         if status:
             query = query.where(Task.status == status)

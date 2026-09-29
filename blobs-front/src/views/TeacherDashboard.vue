@@ -123,21 +123,27 @@ async function loadAllData() {
   try {
     const tasks = await api.getBoardTasks('OPEN')
     openTasksCount.value = tasks.length
-    recentOpenTasks.value = tasks.slice(0, 3).map((t) => ({
-      id: t.id,
-      subject: t.topic?.block || 'Физика',
-      block: t.topic?.block || 'MECHANICS',
-      grade: 9,
-      title: t.topic?.title || 'Вопрос по физике',
-      description: t.question,
-      photoUrl: t.photo_url || '',
-      status: t.status.toLowerCase(),
-      scheduledTime: t.scheduled_time,
-      studentName: t.student?.first_name || 'Ученик',
-      requestType: t.request_type || 'TASK',
-      telemostUrl: t.telemost_url || '',
-      teacherResponse: t.teacher_response || '',
-    }))
+    recentOpenTasks.value = tasks
+      .slice()
+      .sort((a, b) => (b.id || 0) - (a.id || 0))
+      .slice(0, 3)
+      .map((t) => ({
+        id: t.id,
+        subject: t.topic?.block || 'Физика',
+        block: t.topic?.block || 'MECHANICS',
+        grade: t.grade || t.topic?.grade || 9,
+        title: t.topic?.title || 'Вопрос по физике',
+        description: t.question,
+        photoUrl: t.photo_url || '',
+        status: t.status.toLowerCase(),
+        scheduledTime: t.scheduled_time,
+        studentName: t.student?.first_name || 'Ученик',
+        requestType: t.request_type || 'TASK',
+        telemostUrl: t.telemost_url || '',
+        teacherResponse: t.teacher_response || '',
+        createdAt: t.created_at,
+        created_at: t.created_at,
+      }))
   } catch (e) {
     console.warn('Не удалось загрузить открытые задачи:', e)
   }
@@ -146,21 +152,25 @@ async function loadAllData() {
     const myTasks = await api.getMyTasks(auth.userId, 'tutor')
     const inWork = myTasks.filter((t) => (t.status || '').toUpperCase() === 'IN_PROGRESS')
     inWorkCount.value = inWork.length
-    myTasksInWork.value = inWork.map((t) => ({
-      id: t.id,
-      subject: t.topic?.block || 'Физика',
-      block: t.topic?.block || 'MECHANICS',
-      grade: 9,
-      title: t.topic?.title || 'Вопрос по физике',
-      description: t.question,
-      photoUrl: t.photo_url || '',
-      status: t.status.toLowerCase(),
-      scheduledTime: t.scheduled_time,
-      studentName: t.student?.first_name || 'Ученик',
-      requestType: t.request_type || 'TASK',
-      telemostUrl: t.telemost_url || '',
-      teacherResponse: t.teacher_response || '',
-    }))
+    myTasksInWork.value = inWork
+      .map((t) => ({
+        id: t.id,
+        subject: t.topic?.block || 'Физика',
+        block: t.topic?.block || 'MECHANICS',
+        grade: t.grade || t.topic?.grade || 9,
+        title: t.topic?.title || 'Вопрос по физике',
+        description: t.question,
+        photoUrl: t.photo_url || '',
+        status: t.status.toLowerCase(),
+        scheduledTime: t.scheduled_time,
+        studentName: t.student?.first_name || 'Ученик',
+        requestType: t.request_type || 'TASK',
+        telemostUrl: t.telemost_url || '',
+        teacherResponse: t.teacher_response || '',
+        createdAt: t.created_at,
+        created_at: t.created_at,
+      }))
+      .sort((a, b) => (b.id || 0) - (a.id || 0))
   } catch (e) {
     console.warn('Не удалось загрузить задачи в работе:', e)
   } finally {

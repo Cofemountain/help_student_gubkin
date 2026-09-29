@@ -108,21 +108,25 @@ async function loadStudentTasks() {
   loadingRequests.value = true
   try {
     const data = await api.getMyTasks(auth.userId, 'student')
-    myRequests.value = data.map((t) => ({
-      id: t.id,
-      subject: t.topic?.block || 'Физика ОГЭ',
-      block: t.topic?.block || 'MECHANICS',
-      grade: 9,
-      title: t.topic?.title || 'Заявка по физике',
-      description: t.question,
-      photoUrl: t.photo_url || '',
-      status: t.status.toLowerCase(),
-      scheduledTime: t.scheduled_time,
-      studentName: auth.userName,
-      requestType: t.request_type || 'TASK',
-      telemostUrl: t.telemost_url || '',
-      teacherResponse: t.teacher_response || '',
-    }))
+    myRequests.value = data
+      .map((t) => ({
+        id: t.id,
+        subject: t.topic?.block || 'Физика ОГЭ',
+        block: t.topic?.block || 'MECHANICS',
+        grade: t.grade || t.topic?.grade || 9,
+        title: t.topic?.title || 'Заявка по физике',
+        description: t.question,
+        photoUrl: t.photo_url || '',
+        status: t.status.toLowerCase(),
+        scheduledTime: t.scheduled_time,
+        studentName: auth.userName,
+        requestType: t.request_type || 'TASK',
+        telemostUrl: t.telemost_url || '',
+        teacherResponse: t.teacher_response || '',
+        createdAt: t.created_at,
+        created_at: t.created_at,
+      }))
+      .sort((a, b) => (b.id || 0) - (a.id || 0))
   } catch (error) {
     console.warn('Не удалось загрузить заявки ученика:', error)
   } finally {
