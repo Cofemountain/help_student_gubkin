@@ -40,7 +40,6 @@ COPY alembic/ ./alembic/
 COPY alembic.ini ./
 COPY main.py ./
 COPY bot_max.py ./
-COPY bot.py ./
 COPY tasks_bank.json ./
 COPY tasks_bank.sql ./
 

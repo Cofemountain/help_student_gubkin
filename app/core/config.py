@@ -4,8 +4,7 @@ from typing import Optional
 
 class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite+aiosqlite:///./oge_physics.db"
-    BOT_TOKEN: Optional[str] = None
-    MAX_BOT_TOKEN: Optional[str] = "f9LHodD0cOJQCqyrp7oKqKvmguaxmVwqIoT1TPaJhXIujDaMsz5BvR3_2Bp7bnqKw-6uOC7XpKRUb_1HyGkW"
+    MAX_BOT_TOKEN: Optional[str] = None
     DEBUG: bool = True
 
     model_config = SettingsConfigDict(

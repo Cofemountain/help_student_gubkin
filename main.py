@@ -21,7 +21,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="ОГЭ Физика (9 класс) — API Взаимопомощи",
-    description="Backend API и Mini App для мессенджера МАКС и Telegram",
+    description="Backend API и Mini App для российского мессенджера МАКС",
     version="1.0.0",
     lifespan=lifespan,
     debug=settings.DEBUG,

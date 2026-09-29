@@ -37,7 +37,6 @@
 ### 5. Рабочие токены, API-ключи и значения переменных окружения (.env)
 ```env
 MAX_BOT_TOKEN=f9LHodD0cOJQCqyrp7oKqKvmguaxmVwqIoT1TPaJhXIujDaMsz5BvR3_2Bp7bnqKw-6uOC7XpKRUb_1HyGkW
-BOT_TOKEN=8654905422:AAFRoX_fpvPvAeCw0rInrMYFlvIa6kSkfdY
 DATABASE_URL=sqlite+aiosqlite:///./oge_physics.db
 DEBUG=True
 ```

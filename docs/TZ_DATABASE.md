@@ -71,8 +71,8 @@ erDiagram
 
     USERS {
         bigint id PK
-        bigint telegram_id UK "Telegram ID"
-        varchar username "ТГ username"
+        bigint telegram_id UK "MAX User ID"
+        varchar username "MAX username"
         varchar first_name "Имя"
         varchar last_name "Фамилия"
         varchar active_role "student / tutor"
@@ -139,7 +139,7 @@ erDiagram
 | Поле | Тип | Nullable | Описание / Индекс |
 | :--- | :--- | :---: | :--- |
 | `id` | `BIGSERIAL` | ❌ | PK |
-| `telegram_id` | `BIGINT` | ❌ | `UNIQUE INDEX`, ID в Telegram |
+| `telegram_id` | `BIGINT` | ❌ | `UNIQUE INDEX`, ID пользователя в мессенджере МАКС |
 | `username` | `VARCHAR(64)` | ✅ | Никнейм без `@` |
 | `first_name` | `VARCHAR(128)` | ❌ | Имя |
 | `last_name` | `VARCHAR(128)` | ✅ | Фамилия |
@@ -272,7 +272,7 @@ ON CONFLICT DO NOTHING;
 ## 7. НЕОБХОДИМЫЕ ИНДЕКСЫ В БАЗЕ ДАННЫХ
 
 ```sql
--- Быстрый поиск пользователя по Telegram ID при каждом входе в WebApp
+-- Быстрый поиск пользователя по ID в МАКС при каждом входе в WebApp
 CREATE UNIQUE INDEX idx_users_telegram_id ON users (telegram_id);
 
 -- Быстрая фильтрация задач на доске (по статусу, разделу ОГЭ и части)
@@ -306,7 +306,7 @@ backend/
 │   │   └── database.py         # AsyncEngine, AsyncSessionLocal, Base
 │   ├── models/                 # SQLAlchemy 2.0 декларативные модели
 │   │   ├── __init__.py
-│   │   ├── user.py             # User (модель с Telegram ID, XP и уровнем ОГЭ)
+│   │   ├── user.py             # User (модель с MAX User ID, XP и уровнем ОГЭ)
 │   │   ├── topic.py            # Topic (кодификатор тем ОГЭ)
 │   │   ├── task.py             # Task (заявка ОГЭ с Part 1/2)
 │   │   ├── homework.py         # Homework (ДЗ и проверка по критериям)
