@@ -452,6 +452,23 @@ async def mark_task_understood_endpoint(
     return result
 
 
+def check_answers_match(user_answer: str, correct_answer: str) -> bool:
+    if not correct_answer:
+        return True
+    u = str(user_answer).strip().lower().replace(",", ".")
+    c = str(correct_answer).strip().lower().replace(",", ".")
+    if u == c:
+        return True
+    try:
+        u_val = float(u)
+        c_val = float(c)
+        if abs(u_val - c_val) <= 0.15:
+            return True
+    except (ValueError, TypeError):
+        pass
+    return False
+
+
 @router.post("/tasks/{task_id}/check-homework", response_model=CheckAnswerResponse, summary="Проверить ответ ученика на контрольную задачу из закрытого банка")
 async def check_task_homework_endpoint(
     task_id: int,
@@ -473,10 +490,7 @@ async def check_task_homework_endpoint(
     correct_answer = bank_task.answer if bank_task else ""
     solution = bank_task.solution if bank_task else ""
 
-    user_clean = check_in.user_answer.strip().lower().replace(",", ".")
-    correct_clean = correct_answer.strip().lower().replace(",", ".")
-
-    is_correct = (user_clean == correct_clean) if correct_clean else True
+    is_correct = check_answers_match(check_in.user_answer, correct_answer)
 
     if is_correct:
         # Решение принято верно -> Завершаем ДЗ и заявку, начисляем XP обоим!
@@ -770,10 +784,7 @@ async def check_task_answer(
     if not task:
         raise HTTPException(status_code=404, detail="Задача не найдена")
 
-    user_clean = check_in.user_answer.strip().lower().replace(",", ".")
-    correct_clean = task.answer.strip().lower().replace(",", ".")
-
-    is_correct = (user_clean == correct_clean)
+    is_correct = check_answers_match(check_in.user_answer, task.answer)
     xp_awarded = 0
     is_closed = (task.bank_type == "CLOSED")
     reward = 25 if is_closed else 15

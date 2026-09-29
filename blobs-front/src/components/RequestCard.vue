@@ -89,9 +89,16 @@
         </span>
 
         <!-- Преподаватель: В работе -->
-        <template v-if="isInProgress && isTeacher">
+        <template v-if="isInProgress && isTeacher && !request.homework && !isUnderstood">
           <button type="button" class="action-btn answer-btn" @click="openDetailModal">
             ✍️ {{ isTelemost ? '📞 Итоги созвона' : '✍️ Вписать ответ' }}
+          </button>
+        </template>
+
+        <!-- Преподаватель: Ученик понял разбор / ждет задачу из закрытого банка -->
+        <template v-if="(isUnderstood || (isInProgress && (teacherResponseText || telemostLink))) && isTeacher && !request.homework && !isHwIssued">
+          <button type="button" class="action-btn assign-hw-btn" @click.stop="openDetailAndAssignHw">
+            🔒 Выдать задачу (+150 XP)
           </button>
         </template>
 
@@ -531,6 +538,14 @@
             <span class="xp-tag">+25 XP</span>
           </button>
         </div>
+
+        <!-- Подвал модального окна: кнопка «Выдать задачу» если ученик понял или разбор готов -->
+        <div class="modal-footer" v-else-if="isTeacher && (isUnderstood || isInProgress) && !request.homework && !isHwIssued">
+          <button type="button" class="action-btn assign-modal-footer-btn" @click.stop="openClosedBankAssigner">
+            <span>🔒 Выдать задачу из закрытого банка</span>
+            <span class="xp-tag">+150 XP</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -847,6 +862,13 @@ async function saveCustomTelemost() {
     showTelemostInput.value = false
     emit('updated')
   }
+}
+
+function openDetailAndAssignHw() {
+  openDetailModal()
+  setTimeout(() => {
+    openClosedBankAssigner()
+  }, 120)
 }
 
 // Взять задачу преподавателю
@@ -1289,6 +1311,35 @@ function confirmCompleted() {
 .action-btn { border: none; font-family: inherit; font-size: 12px; font-weight: 700; padding: 7px 12px; border-radius: 100px; cursor: pointer; transition: all 0.15s ease; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
 .take-btn { background: #ef7d34; color: white; box-shadow: 0 2px 8px rgba(239,125,52,0.35); }
 .take-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.assign-hw-btn {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  box-shadow: 0 2px 10px rgba(217, 119, 6, 0.4);
+  font-weight: 800;
+  animation: pulse-glow 2s infinite ease-in-out;
+}
+.assign-hw-btn:hover {
+  background: linear-gradient(135deg, #d97706, #b45309);
+  transform: translateY(-1px);
+}
+.assign-modal-footer-btn {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  box-shadow: 0 4px 14px rgba(217, 119, 6, 0.4);
+  width: 100%;
+  justify-content: center;
+  padding: 12px 20px;
+  font-size: 14px;
+  font-weight: 800;
+  border-radius: 12px;
+}
+.assign-modal-footer-btn:hover {
+  background: linear-gradient(135deg, #d97706, #b45309);
+}
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 2px 10px rgba(217, 119, 6, 0.4); }
+  50% { box-shadow: 0 0 16px rgba(245, 158, 11, 0.7); }
+}
 .answer-btn { background: #6366f1; color: white; box-shadow: 0 2px 8px rgba(99,102,241,0.25); }
 .chat-btn { background: #f1f5f9; color: #334155; border: 1.5px solid #e2e8f0; }
 .complete-btn { background: #10b981; color: white; box-shadow: 0 2px 8px rgba(16,185,129,0.25); }
