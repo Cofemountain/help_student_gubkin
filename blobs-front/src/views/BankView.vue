@@ -60,7 +60,7 @@
       >
         <span class="tab-icon">🔒</span>
         <span class="tab-title-full">Закрытый банк задач</span>
-        <span class="tab-title-short">Закрытый банк</span>
+        <span class="tab-title-short">Закрытый</span>
         <span class="tab-badge-xp closed-xp">+25 XP</span>
       </button>
     </div>
@@ -1379,11 +1379,18 @@ function createRequestFromTask(task) {
   display: flex;
   background: #f1f5f9;
   border: 1px solid #e2e8f0;
-  padding: 4px;
+  padding: 5px;
   border-radius: var(--radius-lg);
-  gap: 4px;
+  gap: 6px;
   width: 100%;
   box-sizing: border-box;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.mode-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .mode-tab-btn {
@@ -1393,7 +1400,7 @@ function createRequestFromTask(task) {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 9px 8px;
+  padding: 10px 10px;
   background: transparent;
   border: none;
   border-radius: var(--radius-md);
@@ -1425,7 +1432,8 @@ function createRequestFromTask(task) {
 }
 
 .tab-icon {
-  font-size: 16px;
+  font-size: 15px;
+  flex-shrink: 0;
 }
 
 .tab-counter {
@@ -1435,6 +1443,7 @@ function createRequestFromTask(task) {
   font-weight: 700;
   padding: 1px 7px;
   border-radius: var(--radius-pill);
+  flex-shrink: 0;
 }
 
 .mode-tab-btn.active .tab-counter {
@@ -1450,32 +1459,37 @@ function createRequestFromTask(task) {
   padding: 1px 7px;
   border-radius: var(--radius-pill);
   border: 1px solid #fde68a;
+  flex-shrink: 0;
 }
 
 @media (max-width: 640px) {
   .mode-tabs {
-    gap: 3px;
-    padding: 3px;
+    gap: 6px;
+    padding: 4px;
+    background: #e2e8f0;
   }
   .mode-tab-btn {
-    padding: 8px 4px;
-    font-size: 11px;
-    gap: 3px;
+    padding: 8px 6px;
+    font-size: 12px;
+    gap: 4px;
   }
   .tab-title-full {
     display: none;
   }
   .tab-title-short {
     display: inline;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
   }
-  .tab-badge-xp, .tab-counter {
-    font-size: 9.5px;
-    padding: 1px 4px;
+  .tab-badge-xp {
+    display: none; /* Скрываем громоздкие бейджи +15 XP и +25 XP на мобильных, чтобы вкладки никогда не наезжали друг на друга */
+  }
+  .tab-counter {
+    font-size: 10px;
+    padding: 1px 5px;
   }
   .tab-icon {
-    font-size: 13px;
+    font-size: 14px;
   }
 }
 
@@ -2555,10 +2569,6 @@ function createRequestFromTask(task) {
 @media (max-width: 640px) {
   .hero-stats {
     flex-direction: column;
-  }
-  .mode-tab-btn {
-    font-size: 12px;
-    padding: 8px 10px;
   }
   .filter-label {
     min-width: 100%;
