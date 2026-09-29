@@ -10,7 +10,7 @@
 
 ### 2. Ссылка на Git-репозиторий и commit hash
 * **Репозиторий:** [https://github.com/Cofemountain/help_student_gubkin](https://github.com/Cofemountain/help_student_gubkin)
-* **Commit hash:** `ad6ae64` (актуальный коммит ветки `main`)
+* **Commit hash:** `c23c544` (актуальный коммит ветки `main`)
 * **Ветка:** `main`
 
 ---
