@@ -103,6 +103,13 @@ export const api = {
     })
   },
 
+  updateTelemostUrl: (taskId, telemostUrl) => {
+    return request(`/tasks/${taskId}/telemost-url`, {
+      method: 'PATCH',
+      body: JSON.stringify({ telemost_url: telemostUrl }),
+    })
+  },
+
   completeTask: (taskId, studentTgId = null) => {
     const query = studentTgId ? `?student_tg_id=${encodeURIComponent(studentTgId)}` : ''
     return request(`/tasks/${taskId}/complete${query}`, {

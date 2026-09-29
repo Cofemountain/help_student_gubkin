@@ -331,6 +331,7 @@ async function handleTake(request) {
   flex-direction: column;
   gap: var(--space-4);
   padding: var(--space-4);
+  padding-bottom: 110px;
   max-width: 600px;
   margin: 0 auto;
 }
@@ -345,28 +346,32 @@ async function handleTake(request) {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 10px;
 }
 
 .header-top h2 {
   margin: 0;
-  font-size: 19px;
-  font-weight: 700;
+  font-size: 17px;
+  font-weight: 800;
   color: var(--text);
+  line-height: 1.25;
+  flex: 1;
 }
 
 .top-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
 .create-req-btn {
   background: var(--primary);
   color: var(--ink);
   text-decoration: none;
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 700;
-  padding: 6px 12px;
+  padding: 6px 10px;
   border-radius: var(--radius-pill);
   display: inline-flex;
   align-items: center;

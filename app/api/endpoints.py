@@ -12,7 +12,7 @@ from app.models.user import UserRole
 from app.models.xp_transaction import XPReason
 from app.schemas.user import UserCreate, UserRoleUpdate, UserResponse
 from app.schemas.topic import TopicResponse
-from app.schemas.task import TaskCreate, TaskResponse, TaskReviewCreate, TaskClarifyRequest
+from app.schemas.task import TaskCreate, TaskResponse, TaskReviewCreate, TaskClarifyRequest, TelemostUrlUpdate
 from app.schemas.homework import HomeworkCreate, HomeworkSubmit, HomeworkReview, HomeworkResponse
 from app.schemas.bank_task import (
     BankTaskStudentResponse,
@@ -346,6 +346,21 @@ async def create_telemost_room(
         mark_completed=False,
     )
     return updated_task
+
+
+@router.patch("/tasks/{task_id}/telemost-url", response_model=TaskResponse, summary="Прикрепление ссылки на видеовстречу")
+async def update_task_telemost_url(
+    task_id: int,
+    body: TelemostUrlUpdate,
+    session: AsyncSession = Depends(get_db),
+):
+    task = await crud_task.get_by_id(session, task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Задача не найдена")
+    task.telemost_url = body.telemost_url.strip()
+    await session.commit()
+    result = await crud_task.get_by_id(session, task.id)
+    return result
 
 
 @router.post("/tasks/{task_id}/clarify", response_model=TaskResponse, summary="Ученик задает уточняющий вопрос по заявке (если не понял разбор)")

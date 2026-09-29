@@ -2,12 +2,12 @@
   <div class="request-card" :class="cardClasses" @click="openDetailModal">
     <div class="card-header">
       <div class="header-tags">
-        <span class="grade-tag">{{ gradeLabel }}</span>
-        <span class="topic-tag">{{ topicLabel }}</span>
+        <span class="grade-tag">{{ gradeShortLabel }}</span>
+        <span class="topic-tag">{{ topicShortLabel }}</span>
         <span class="format-tag" :class="isTelemost ? 'telemost' : 'task'">
           {{ isTelemost ? '📹 Телемост' : '📝 Задача' }}
         </span>
-        <span class="part-tag">{{ partLabel }}</span>
+        <span v-if="request.part === 'PART_2'" class="part-tag">Часть 2 ОГЭ</span>
       </div>
       <span class="status-badge" :class="statusClass">{{ statusLabel }}</span>
     </div>
@@ -26,11 +26,10 @@
       </div>
 
       <div class="card-meta">
-        <span class="meta-item">🕒 {{ request.scheduled_time || request.scheduledTime || 'Как можно скорее' }}</span>
+        <span class="meta-item">🕒 Срок: {{ request.scheduled_time || request.scheduledTime || 'Сегодня' }}</span>
         <span class="meta-item" v-if="request.student_name || request.studentName">
           👤 {{ request.student_name || request.studentName }}
         </span>
-        <span class="open-card-hint" @click.stop="openDetailModal">Подробнее / Решение ↗</span>
       </div>
 
       <!-- Краткое превью ответа преподавателя в карточке ленты -->
@@ -75,37 +74,40 @@
         <template v-if="isOpen && isTeacher && !isOwnTask">
           <button type="button" class="action-btn take-btn" :disabled="taking" @click="handleTake">
             <span v-if="taking">⏳ Беру...</span>
-            <span v-else>🤝 Взять на разбор</span>
-            <span class="xp-tag">+25 XP</span>
+            <span v-else>🤝 Взять (+25 XP)</span>
           </button>
         </template>
 
         <!-- Если заявка создана текущим пользователем -->
-        <span v-if="isOpen && isOwnTask" class="student-hint own-task-pill">
-          👤 Ваша заявка (ожидает преподавателя)
+        <span v-if="isOpen && isOwnTask" class="own-task-pill">
+          👤 Ваша заявка
         </span>
 
         <!-- Ученик (не преподаватель): Ожидание -->
         <span v-else-if="isOpen && !isTeacher" class="student-hint">
-          ⏳ Ожидает преподавателя
+          ⏳ Ожидает
         </span>
 
-        <!-- Преподаватель: В работе -> Кнопка открыть карточку для ввода/дополнения решения -->
+        <!-- Преподаватель: В работе -->
         <template v-if="isInProgress && isTeacher">
           <button type="button" class="action-btn answer-btn" @click="openDetailModal">
-            ✍️ {{ isTelemost ? '📞 Итоги звонка / ДЗ' : (teacherResponseText ? '📝 Дополнить разбор' : '✍️ Вписать решение') }}
+            ✍️ {{ isTelemost ? '📞 Итоги созвона' : '✍️ Вписать ответ' }}
           </button>
         </template>
 
-        <!-- Ученик: В работе -> Проверить ответ / Закрыть заявку -->
+        <!-- Ученик: В работе -->
         <template v-if="isInProgress && !isTeacher">
           <button type="button" class="action-btn check-solution-btn" @click="openDetailModal">
-            <span v-if="teacherResponseText || telemostLink">🎓 Проверить решение преподавателя</span>
-            <span v-else>⏳ В работе у преподавателя</span>
+            <span v-if="teacherResponseText || telemostLink">🎓 Проверить решение</span>
+            <span v-else>⏳ В работе</span>
           </button>
         </template>
 
-        <span v-if="isCompleted" class="completed-label">✓ Вопрос решён</span>
+        <span v-if="isCompleted" class="completed-label">✓ Решена</span>
+
+        <button type="button" class="open-details-btn" @click="openDetailModal">
+          Подробнее →
+        </button>
       </div>
     </div>
 
@@ -186,38 +188,70 @@
           <!-- 2. ЕСЛИ ТЕЛЕМОСТ: Блок видеовстречи и проведение звонка -->
           <div v-if="isTelemost || telemostLink" class="modal-telemost-section">
             <div class="tm-alert-box">
-              <span class="tm-icon-large">📹</span>
-              <div class="tm-details">
-                <strong>Индивидуальная видеоконсультация в Яндекс Телемосте</strong>
-                <p v-if="telemostLink">Комната Яндекс Телемост готова. Нажмите для входа в видеозвонок:</p>
-                <div v-else class="tm-instruction-box">
-                  <p class="tm-step">1️⃣ Нажмите <strong>«Создать встречу в Телемосте»</strong> (в открывшемся окне Яндекса нажмите желтую кнопку «Создать встречу»).</p>
-                  <p class="tm-step">2️⃣ Вставьте скопированную ссылку сюда и нажмите <strong>«Прикрепить ссылку»</strong> — ученик сразу получит кнопку прямого входа!</p>
+              <div class="tm-alert-header">
+                <span class="tm-icon-large">📹</span>
+                <div>
+                  <h4 class="tm-title">Индивидуальная видеоконсультация в Яндекс Телемосте</h4>
+                  <p v-if="telemostLink" class="tm-subtitle">Комната готова к созвону. Нажмите кнопку для подключения:</p>
+                  <p v-else class="tm-subtitle">Для проведения созвона создайте встречу в Телемосте и прикрепите ссылку:</p>
+                </div>
+              </div>
+
+              <!-- Если ссылка уже создана и прикреплена -->
+              <div v-if="telemostLink" class="tm-ready-block">
+                <div class="tm-link-display">
+                  <span class="tm-link-icon">🔗</span>
+                  <a :href="telemostLink" target="_blank" rel="noopener" class="tm-link-url">{{ telemostLink }}</a>
                 </div>
                 <div class="tm-actions-row">
-                  <a v-if="telemostLink" :href="telemostLink" target="_blank" rel="noopener" class="tm-connect-btn">
+                  <a :href="telemostLink" target="_blank" rel="noopener" class="tm-connect-btn">
                     📹 Подключиться к Яндекс Телемосту
                   </a>
-                  <a v-else href="https://telemost.yandex.ru/" target="_blank" rel="noopener" class="tm-open-link-btn primary" @click="showTelemostInput = true">
-                    🌐 Создать встречу в Телемосте
-                  </a>
-                  <button v-if="isTeacher" type="button" class="tm-edit-link-btn" @click="showTelemostInput = !showTelemostInput">
-                    {{ showTelemostInput ? '✕ Скрыть ввод' : (telemostLink ? '🔄 Изменить ссылку' : '🔗 Вставить ссылку встречи') }}
+                  <button type="button" class="tm-change-btn" @click="showTelemostInput = !showTelemostInput">
+                    {{ showTelemostInput ? '✕ Скрыть поле' : '🔄 Изменить ссылку' }}
                   </button>
                 </div>
-                <div v-if="isTeacher && (showTelemostInput || !telemostLink)" class="tm-custom-input-box">
+              </div>
+
+              <!-- Инструкция и форма прикрепления ссылки (если ссылки еще нет или нажали "Изменить") -->
+              <div v-if="!telemostLink || showTelemostInput" class="tm-setup-card">
+                <div class="tm-steps-list">
+                  <div class="tm-step-item">
+                    <span class="tm-step-num">1</span>
+                    <div class="tm-step-content">
+                      <span>Создайте встречу в Яндекс Телемосте:</span>
+                      <a href="https://telemost.yandex.ru/" target="_blank" rel="noopener" class="tm-open-telemost-link">
+                        🌐 Открыть Яндекс Телемост ↗
+                      </a>
+                    </div>
+                  </div>
+                  <div class="tm-step-item">
+                    <span class="tm-step-num">2</span>
+                    <div class="tm-step-content">
+                      <span>Вставьте скопированную ссылку на встречу:</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="tm-input-action-row">
                   <input
                     v-model="customTelemostInput"
                     type="text"
-                    placeholder="Вставьте ссылку https://telemost.yandex.ru/j/..."
-                    class="tm-custom-input"
+                    placeholder="https://telemost.yandex.ru/j/..."
+                    class="tm-input-field"
                   />
-                  <button type="button" class="tm-save-custom-btn" @click="saveCustomTelemost">
+                  <button
+                    type="button"
+                    class="tm-attach-btn"
+                    :disabled="!customTelemostInput.trim()"
+                    @click="saveCustomTelemost"
+                  >
                     💾 Прикрепить ссылку
                   </button>
                 </div>
               </div>
             </div>
+          </div>
 
             <!-- Кнопка «Выдать проверочную задачу из закрытого банка» для преподавателя -->
             <div v-if="isTeacher && isInProgressOrUnderstood" class="call-finished-container">
@@ -229,7 +263,6 @@
                 🔒 Выдать задачу из закрытого банка для ученика
               </button>
             </div>
-          </div>
 
           <!-- 3. ДЛЯ ПРЕПОДАВАТЕЛЯ В СТАТУСЕ «В РАБОТЕ»: ВПИСАТЬ РЕШЕНИЕ И ПРИКРЕПИТЬ ФОТО -->
           <div v-if="isTeacher && isInProgress && !isTelemost" class="teacher-solution-editor">
@@ -567,14 +600,29 @@ const formattedShortTime = computed(() => {
     const hours = String(d.getHours()).padStart(2, '0')
     const mins = String(d.getMinutes()).padStart(2, '0')
     if (isToday) {
-      return `Создано сегодня в ${hours}:${mins}`
+      return `${hours}:${mins}`
     }
     const day = String(d.getDate()).padStart(2, '0')
     const month = String(d.getMonth() + 1).padStart(2, '0')
-    return `Создано ${day}.${month} в ${hours}:${mins}`
+    return `${day}.${month} ${hours}:${mins}`
   } catch {
     return 'Недавно'
   }
+})
+
+const gradeShortLabel = computed(() => {
+  const g = props.request.grade || props.request.topic?.grade || 9
+  return `${g} класс`
+})
+
+const topicShortLabel = computed(() => {
+  const title = props.request.topic_title || props.request.topic?.title
+  if (title) {
+    if (title.length > 20) return title.slice(0, 18) + '...'
+    return title
+  }
+  const block = (props.request.block || props.request.subject || '').toUpperCase()
+  return BLOCK_LABELS[block] || 'Физика'
 })
 
 const formattedFullTime = computed(() => {
@@ -749,15 +797,22 @@ async function saveCustomTelemost() {
   const link = customTelemostInput.value.trim()
   if (!link) return
   if (!link.startsWith('http://') && !link.startsWith('https://')) {
-    window.alert('⚠️ Введите корректную ссылку, например https://telemost.yandex.ru/j/...')
+    window.alert('⚠️ Введите корректную ссылку на видеовстречу (начиная с https://)')
     return
   }
   props.request.telemost_url = link
   props.request.telemostUrl = link
-  await api.submitReview(props.request.id, { telemost_url: link, status: 'IN_PROGRESS' }, auth.userId)
-  showTelemostInput.value = false
-  window.alert('✅ Ссылка на Яндекс Телемост успешно сохранена!')
-  emit('updated')
+  try {
+    await api.updateTelemostUrl(props.request.id, link)
+    showTelemostInput.value = false
+    customTelemostInput.value = ''
+    window.alert('✅ Ссылка на Яндекс Телемост успешно прикреплена к заявке!')
+    emit('updated')
+  } catch (err) {
+    console.warn('Ошибка при сохранении ссылки:', err)
+    showTelemostInput.value = false
+    emit('updated')
+  }
 }
 
 // Взять задачу преподавателю
@@ -1032,15 +1087,35 @@ function confirmCompleted() {
 .request-card.is-completed { background: #fafbfc; }
 .request-card.is-in-progress { border-color: #93c5fd; box-shadow: 0 0 0 3px rgba(59,130,246,0.07); }
 
-.card-header { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
-.header-tags { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
-.grade-tag { background: #fef3c7; color: #92400e; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 100px; }
-.topic-tag { background: #e0e7ff; color: #3730a3; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 100px; }
-.format-tag { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 100px; }
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.header-tags {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
+}
+.grade-tag { background: #fef3c7; color: #92400e; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 100px; white-space: nowrap; }
+.topic-tag { background: #e0e7ff; color: #3730a3; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 100px; white-space: nowrap; }
+.format-tag { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 100px; white-space: nowrap; }
 .format-tag.telemost { background: #fee2e2; color: #b91c1c; }
 .format-tag.task { background: #e0f2fe; color: #0369a1; }
-.part-tag { background: #f1f5f9; color: #475569; font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 100px; }
-.status-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 100px; white-space: nowrap; }
+.part-tag { background: #f1f5f9; color: #475569; font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 100px; white-space: nowrap; }
+.status-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 100px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-left: auto;
+}
 .status-badge.status-open { background: #dcfce7; color: #15803d; }
 .status-badge.status-progress { background: #fef3c7; color: #b45309; }
 .status-badge.status-done { background: #f1f5f9; color: #64748b; }
@@ -1112,7 +1187,6 @@ function confirmCompleted() {
   gap: 8px;
   border-top: 1px solid #f1f5f9;
   padding-top: 10px;
-  flex-wrap: wrap;
 }
 .card-created-time {
   font-size: 11px;
@@ -1122,37 +1196,56 @@ function confirmCompleted() {
   align-items: center;
   gap: 4px;
   background: #f8fafc;
-  padding: 4px 8px;
+  padding: 3px 8px;
   border-radius: 6px;
   border: 1px solid #e2e8f0;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .card-footer-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
-  margin-left: auto;
+  justify-content: flex-end;
 }
-.action-btn { border: none; font-family: inherit; font-size: 12px; font-weight: 700; padding: 8px 14px; border-radius: 100px; cursor: pointer; transition: all 0.15s ease; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.open-details-btn {
+  background: transparent;
+  border: none;
+  color: #2563eb;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  border-radius: 6px;
+  transition: all 0.15s;
+}
+.open-details-btn:hover {
+  background: #eff6ff;
+  text-decoration: underline;
+}
+.action-btn { border: none; font-family: inherit; font-size: 12px; font-weight: 700; padding: 7px 12px; border-radius: 100px; cursor: pointer; transition: all 0.15s ease; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
 .take-btn { background: #ef7d34; color: white; box-shadow: 0 2px 8px rgba(239,125,52,0.35); }
 .take-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .answer-btn { background: #6366f1; color: white; box-shadow: 0 2px 8px rgba(99,102,241,0.25); }
 .chat-btn { background: #f1f5f9; color: #334155; border: 1.5px solid #e2e8f0; }
 .complete-btn { background: #10b981; color: white; box-shadow: 0 2px 8px rgba(16,185,129,0.25); }
 .xp-tag { background: rgba(255,255,255,0.25); font-size: 10px; padding: 1px 5px; border-radius: 100px; }
-.student-hint { font-size: 12px; color: #94a3b8; font-weight: 500; }
+.student-hint { font-size: 11px; color: #94a3b8; font-weight: 600; white-space: nowrap; }
 .own-task-pill {
   background: #f8fafc;
   color: #475569;
   border: 1px dashed #cbd5e1;
-  padding: 4px 10px;
+  padding: 3px 8px;
   border-radius: 100px;
   font-size: 11px;
   font-weight: 600;
   display: inline-flex;
   align-items: center;
+  white-space: nowrap;
 }
-.completed-label { font-size: 12px; color: #10b981; font-weight: 700; }
+.completed-label { font-size: 12px; color: #10b981; font-weight: 700; white-space: nowrap; }
 
 /* ========================================================= */
 /* СТИЛИ МОДАЛЬНОГО ОКНА ДЛЯ ОТКРЫТОЙ КАРТОЧКИ               */
@@ -1163,21 +1256,21 @@ function confirmCompleted() {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(15, 23, 42, 0.7);
+  background: rgba(15, 23, 42, 0.75);
   backdrop-filter: blur(5px);
   z-index: 9999;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 16px;
+  padding: 12px;
   box-sizing: border-box;
 }
 
 .detail-modal {
   background: #ffffff;
   width: 100%;
-  max-width: 620px;
-  max-height: 90vh;
+  max-width: 600px;
+  max-height: 88vh;
   border-radius: 20px;
   display: flex;
   flex-direction: column;
@@ -1192,7 +1285,7 @@ function confirmCompleted() {
 }
 
 .modal-header {
-  padding: 16px 20px;
+  padding: 14px 18px;
   border-bottom: 1px solid #f1f5f9;
   display: flex;
   justify-content: space-between;
@@ -1205,8 +1298,8 @@ function confirmCompleted() {
   border: none;
   font-size: 18px;
   font-weight: 700;
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   cursor: pointer;
   display: flex;
@@ -1219,8 +1312,9 @@ function confirmCompleted() {
 .modal-close-btn:hover { background: #e2e8f0; color: #0f172a; }
 
 .modal-body {
-  padding: 20px;
+  padding: 16px 18px 45px;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -1371,94 +1465,242 @@ function confirmCompleted() {
 .modal-telemost-section {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
+
 .tm-alert-box {
-  background: #eff6ff;
-  border: 1.5px solid #93c5fd;
-  border-radius: 14px;
-  padding: 14px;
+  background: #f0f7ff;
+  border: 1.5px solid #bfdbfe;
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-sizing: border-box;
+}
+
+.tm-alert-header {
   display: flex;
   align-items: flex-start;
   gap: 12px;
 }
-.tm-icon-large { font-size: 28px; line-height: 1; }
-.tm-details strong { font-size: 14px; color: #1e3a8a; }
-.tm-details p { margin: 4px 0 10px; font-size: 12px; color: #475569; }
-.tm-actions-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+.tm-icon-large {
+  font-size: 32px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.tm-title {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #1e3a8a;
+  line-height: 1.35;
+}
+
+.tm-subtitle {
+  margin: 0;
+  font-size: 13px;
+  color: #475569;
+  line-height: 1.4;
+}
+
+/* Ссылка уже создана и готова к подключению */
+.tm-ready-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #ffffff;
+  border: 1.5px solid #93c5fd;
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.tm-link-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+}
+
+.tm-link-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.tm-link-url {
+  font-size: 13px;
+  font-weight: 600;
+  color: #2563eb;
+  text-decoration: underline;
+  word-break: break-all;
+  white-space: normal;
+}
+
+.tm-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .tm-connect-btn {
-  background: #3b82f6;
-  color: white;
-  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: #2563eb;
+  color: #ffffff !important;
+  text-decoration: none !important;
   font-size: 13px;
   font-weight: 700;
-  padding: 8px 16px;
+  padding: 9px 18px;
   border-radius: 100px;
+  box-shadow: 0 3px 10px rgba(37, 99, 235, 0.25);
+  transition: all 0.15s;
 }
-.tm-create-btn {
-  background: #2563eb;
-  color: white;
-  border: none;
-  font-size: 12px;
-  font-weight: 700;
-  padding: 8px 14px;
-  border-radius: 100px;
-  cursor: pointer;
+
+.tm-connect-btn:hover {
+  background: #1d4ed8;
+  transform: translateY(-1px);
 }
-.tm-instruction-box {
-  background: #ffffff;
-  border-radius: 8px;
-  padding: 8px 12px;
-  margin: 6px 0 10px;
-  border-left: 3px solid #3b82f6;
-  border: 1px solid #bfdbfe;
-}
-.tm-step {
-  margin: 4px 0 !important;
-  font-size: 12px !important;
-  color: #1e293b !important;
-  line-height: 1.4 !important;
-}
-.tm-open-link-btn.primary {
-  background: #2563eb;
-  color: white;
-  border: none;
-  font-weight: 700;
-}
-.tm-edit-link-btn {
-  background: transparent;
-  color: #2563eb;
-  border: 1px solid #93c5fd;
+
+.tm-change-btn {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
   font-size: 12px;
   font-weight: 600;
-  padding: 7px 12px;
+  padding: 8px 14px;
   border-radius: 100px;
   cursor: pointer;
+  transition: all 0.15s;
 }
-.tm-custom-input-box {
-  margin-top: 10px;
+
+.tm-change-btn:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+/* Карточка пошаговой инструкции и прикрепления ссылки */
+.tm-setup-card {
+  background: #ffffff;
+  border: 1.5px solid #bfdbfe;
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tm-steps-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tm-step-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.tm-step-num {
+  width: 22px;
+  height: 22px;
+  background: #2563eb;
+  color: #ffffff;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.tm-step-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: #1e293b;
+  line-height: 1.4;
+  flex: 1;
+}
+
+.tm-open-telemost-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: #2563eb;
+  color: #ffffff !important;
+  text-decoration: none !important;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 9px 16px;
+  border-radius: 10px;
+  width: fit-content;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+  transition: all 0.15s;
+}
+
+.tm-open-telemost-link:hover {
+  background: #1d4ed8;
+}
+
+.tm-input-action-row {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
   width: 100%;
 }
-.tm-custom-input {
+
+.tm-input-field {
   flex: 1;
-  padding: 8px 12px;
+  min-width: 200px;
+  padding: 10px 12px;
   border: 1.5px solid #93c5fd;
-  border-radius: 8px;
+  border-radius: 10px;
+  font-family: inherit;
   font-size: 13px;
   outline: none;
-  background: white;
+  background: #f8fafc;
+  transition: all 0.15s;
 }
-.tm-save-custom-btn {
-  background: #2563eb;
-  color: white;
+
+.tm-input-field:focus {
+  background: #ffffff;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.tm-attach-btn {
+  background: #10b981;
+  color: #ffffff;
   border: none;
-  padding: 8px 14px;
-  border-radius: 8px;
-  font-size: 12px;
+  font-family: inherit;
+  font-size: 13px;
   font-weight: 700;
+  padding: 10px 16px;
+  border-radius: 10px;
   cursor: pointer;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.tm-attach-btn:hover:not(:disabled) {
+  background: #059669;
+}
+
+.tm-attach-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
 }
 
 .call-finished-container { margin-top: 4px; }

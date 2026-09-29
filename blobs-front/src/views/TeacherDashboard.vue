@@ -218,6 +218,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+  padding-bottom: 110px;
 }
 
 .teacher-hero {

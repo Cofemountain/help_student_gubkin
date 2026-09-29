@@ -38,6 +38,10 @@ class TaskClarifyRequest(BaseModel):
     clarification: str
 
 
+class TelemostUrlUpdate(BaseModel):
+    telemost_url: str
+
+
 class TaskResponse(TaskBase):
     id: int
     student_id: int
