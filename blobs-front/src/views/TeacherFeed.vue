@@ -133,9 +133,9 @@ const gradeOptions = [
 const blocks = [
   { key: 'ALL', label: 'Все разделы' },
   { key: 'MECHANICS', label: '⚙️ Механика' },
-  { key: 'THERMODYNAMICS', label: '🔥 Тепловые' },
-  { key: 'ELECTRODYNAMICS', label: '⚡ Электрические явления' }, // Полное название!
-  { key: 'QUANTUM', label: '🔬 Квантовые' },
+  { key: 'THERMODYNAMICS', label: '🔥 Тепловые явления' },
+  { key: 'ELECTRODYNAMICS', label: '⚡ Электродинамика' },
+  { key: 'QUANTUM', label: '🔬 Квантовая физика' },
   { key: 'PART_2_ADVANCED', label: '⭐️ 2-я часть ОГЭ' },
 ]
 const activeBlock = ref('ALL')
@@ -431,26 +431,29 @@ async function handleTake(request) {
   -webkit-overflow-scrolling: touch;
 }
 .grade-filter-btn {
-  border: 1px solid #e2e8f0;
-  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  background: #ffffff;
   color: #475569;
   font-family: inherit;
   font-size: 12px;
   font-weight: 600;
-  padding: 4px 12px;
+  padding: 5px 12px;
   border-radius: 100px;
   cursor: pointer;
   transition: all 0.15s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
-.grade-filter-btn:hover {
-  background: #f1f5f9;
+.grade-filter-btn:hover:not(.active) {
+  background: #f8fafc;
   border-color: #cbd5e1;
+  color: #0f172a;
 }
 .grade-filter-btn.active {
   background: #fff8f3;
-  border-color: #ef7d34;
-  color: #c25410;
+  border-color: #f97316;
+  color: #c2410c;
   font-weight: 700;
+  box-shadow: 0 2px 6px rgba(249, 115, 22, 0.15);
 }
 
 .filter-chips {

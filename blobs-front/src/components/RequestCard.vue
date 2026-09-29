@@ -119,10 +119,11 @@
         <!-- Шапка открытой карточки -->
         <div class="modal-header">
           <div class="modal-tags">
-            <span class="grade-tag">{{ gradeLabel }}</span>
-            <span class="topic-tag">{{ topicLabel }}</span>
-            <span class="part-tag">{{ partLabel }}</span>
-            <span class="status-badge" :class="statusClass">{{ statusLabel }}</span>
+            <span class="status-badge" :class="statusClass">● {{ statusLabel }}</span>
+            <span class="grade-tag">{{ gradeShortLabel }}</span>
+            <span class="topic-tag">{{ topicShortLabel }}</span>
+            <span class="part-tag">{{ request.part === 'PART_2' ? 'Часть 2 ОГЭ' : 'Часть 1 ОГЭ' }}</span>
+            <span v-if="isTelemost" class="format-tag telemost">📹 Телемост</span>
           </div>
           <button type="button" class="modal-close-btn" @click="closeDetailModal" title="Закрыть окно (Esc)">✕</button>
         </div>
@@ -1101,24 +1102,58 @@ function confirmCompleted() {
   flex: 1;
   min-width: 0;
 }
-.grade-tag { background: #fef3c7; color: #92400e; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 100px; white-space: nowrap; }
-.topic-tag { background: #e0e7ff; color: #3730a3; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 100px; white-space: nowrap; }
-.format-tag { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 100px; white-space: nowrap; }
-.format-tag.telemost { background: #fee2e2; color: #b91c1c; }
-.format-tag.task { background: #e0f2fe; color: #0369a1; }
-.part-tag { background: #f1f5f9; color: #475569; font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 100px; white-space: nowrap; }
-.status-badge {
-  font-size: 10px;
+.grade-tag {
+  background: #fffbeb;
+  color: #b45309;
+  border: 1px solid #fde68a;
+  font-size: 11px;
   font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 100px;
+  padding: 3px 8px;
+  border-radius: 8px;
   white-space: nowrap;
-  flex-shrink: 0;
-  margin-left: auto;
 }
-.status-badge.status-open { background: #dcfce7; color: #15803d; }
-.status-badge.status-progress { background: #fef3c7; color: #b45309; }
-.status-badge.status-done { background: #f1f5f9; color: #64748b; }
+.topic-tag {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+.format-tag {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+.format-tag.telemost { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+.format-tag.task { background: #f0fdfa; color: #0f766e; border: 1px solid #99f6e4; }
+.part-tag {
+  background: #f8fafc;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+.status-badge {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 9px;
+  border-radius: 8px;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.status-badge.status-open { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+.status-badge.status-progress { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
+.status-badge.status-done { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
 
 .card-body { display: flex; flex-direction: column; gap: 8px; }
 .card-title { margin: 0; font-size: 15px; font-weight: 700; color: #0f172a; line-height: 1.4; word-break: break-word; }
@@ -1285,21 +1320,28 @@ function confirmCompleted() {
 }
 
 .modal-header {
-  padding: 14px 18px;
+  padding: 14px 16px;
   border-bottom: 1px solid #f1f5f9;
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  gap: 12px;
+  align-items: flex-start;
+  gap: 10px;
+  background: #ffffff;
 }
-.modal-tags { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.modal-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+  flex: 1;
+}
 .modal-close-btn {
   background: #f1f5f9;
   border: none;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   cursor: pointer;
   display: flex;
@@ -1308,6 +1350,7 @@ function confirmCompleted() {
   color: #475569;
   transition: all 0.15s;
   flex-shrink: 0;
+  margin-top: 1px;
 }
 .modal-close-btn:hover { background: #e2e8f0; color: #0f172a; }
 
