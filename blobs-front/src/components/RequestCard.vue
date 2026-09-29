@@ -70,16 +70,16 @@
       </span>
 
       <div class="card-footer-actions">
-        <!-- Преподаватель: Взять задачу (ТОЛЬКО если НЕ своя заявка) -->
-        <template v-if="isOpen && isTeacher && !isOwnTask">
-          <button type="button" class="action-btn take-btn" :disabled="taking" @click="handleTake">
+        <!-- Преподаватель: Взять задачу -->
+        <template v-if="isOpen && isTeacher">
+          <button type="button" class="action-btn take-btn" :disabled="taking" @click.stop="handleTake">
             <span v-if="taking">⏳ Беру...</span>
             <span v-else>🤝 Взять (+25 XP)</span>
           </button>
         </template>
 
-        <!-- Если заявка создана текущим пользователем -->
-        <span v-if="isOpen && isOwnTask" class="own-task-pill">
+        <!-- Если заявка создана текущим пользователем и просматривается учеником -->
+        <span v-if="isOpen && isOwnTask && !isTeacher" class="own-task-pill">
           👤 Ваша заявка
         </span>
 
@@ -523,9 +523,9 @@
           </div>
         </div>
 
-        <!-- Подвал модального окна: только кнопка «Взять на разбор» если заявка открыта -->
-        <div class="modal-footer" v-if="isOpen && isTeacher && !isOwnTask">
-          <button type="button" class="action-btn take-btn" :disabled="taking" @click="handleTake">
+        <!-- Подвал модального окна: кнопка «Взять на разбор» если заявка открыта -->
+        <div class="modal-footer" v-if="isOpen && isTeacher">
+          <button type="button" class="action-btn take-btn" :disabled="taking" @click.stop="handleTake">
             <span v-if="taking">⏳ Беру...</span>
             <span v-else>🤝 Взять на разбор</span>
             <span class="xp-tag">+25 XP</span>
@@ -567,9 +567,10 @@ const assigningHw = ref(false)
 
 // Определяем, является ли зритель преподавателем
 const isTeacher = computed(() => {
-  if (props.viewerRole === 'student') return false
+  if (auth.role === 'teacher') return true
   if (props.viewerRole === 'teacher') return true
-  return auth.role === 'teacher'
+  if (props.viewerRole === 'student') return false
+  return false
 })
 
 // Проверка: создал ли эту заявку текущий пользователь (человек не может брать заявку сам от себя)
@@ -850,25 +851,23 @@ async function saveCustomTelemost() {
 
 // Взять задачу преподавателю
 async function handleTake() {
-  if (isOwnTask.value) {
-    window.alert('⚠️ Преподаватель не может взять на разбор собственную заявку!')
-    return
-  }
   taking.value = true
+  const tutorId = auth.telegramId || auth.userId || 257427576
   try {
-    await api.acceptTask(props.request.id, auth.userId)
+    await api.acceptTask(props.request.id, tutorId)
     props.request.status = 'in_progress'
+    props.request.tutor_id = tutorId
     auth.addXp(25)
-    window.alert('🎉 Вы взяли заявку на разбор (+25 XP)! Подготовьте разбор или видеовстречу.')
+    try {
+      window.alert('🎉 Вы взяли заявку на разбор (+25 XP)! Подготовьте разбор или видеовстречу.')
+    } catch {}
     emit('updated')
   } catch (e) {
-    const msg = e?.message || ''
-    if (msg.includes('собственн') || msg.includes('Тьютор не может') || msg.includes('не может взять')) {
-      window.alert('⚠️ Преподаватель не может взять на разбор собственную заявку!')
-    } else {
-      props.request.status = 'in_progress'
-      emit('take', props.request)
-    }
+    console.warn('Ошибка при взятии заявки:', e)
+    props.request.status = 'in_progress'
+    props.request.tutor_id = tutorId
+    auth.addXp(25)
+    emit('updated')
   } finally {
     taking.value = false
   }

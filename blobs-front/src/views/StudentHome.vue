@@ -62,12 +62,17 @@
 
       <div v-else class="cards-list">
         <RequestCard
-          v-for="req in myRequests"
+          v-for="req in visibleRequests"
           :key="req.id"
           :request="req"
           viewer-role="student"
           @updated="loadStudentTasks"
         />
+        <div v-if="myRequests.length > 4" class="more-requests-footer">
+          <router-link to="/requests" class="more-requests-btn">
+            Смотреть все заявки ({{ myRequests.length }}) →
+          </router-link>
+        </div>
       </div>
     </section>
 
@@ -94,7 +99,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import RequestCard from '../components/RequestCard.vue'
 import { api } from '../services/api'
 import { useAuthStore } from '../stores/auth'
@@ -103,11 +108,14 @@ const auth = useAuthStore()
 
 const loadingRequests = ref(true)
 const myRequests = ref([])
+const visibleRequests = computed(() => {
+  return myRequests.value.slice(0, 4)
+})
 
 async function loadStudentTasks() {
   loadingRequests.value = true
   try {
-    const data = await api.getMyTasks(auth.userId, 'student')
+    const data = await api.getMyTasks(auth.telegramId || auth.userId, 'student')
     myRequests.value = data
       .map((t) => ({
         id: t.id,
@@ -450,5 +458,31 @@ onMounted(() => {
 }
 .pw-button:hover .pw-arrow {
   transform: translateX(3px);
+}
+
+.more-requests-footer {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-2);
+}
+
+.more-requests-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 18px;
+  background: var(--surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--primary);
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.more-requests-btn:hover {
+  background: var(--surface-hover);
+  border-color: var(--primary);
 }
 </style>

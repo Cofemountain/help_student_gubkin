@@ -431,7 +431,7 @@ async function submitForm() {
       scheduled_time: formData.scheduledTime.trim() || 'Сегодня',
     }
 
-    await api.createTask(payload, auth.userId)
+    await api.createTask(payload, auth.telegramId || auth.userId)
     alert('✅ Ваша заявка успешно опубликована в реестре преподавателей!')
     router.push('/requests')
   } catch (err) {

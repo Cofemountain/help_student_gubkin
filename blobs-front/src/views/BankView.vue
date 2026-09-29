@@ -36,7 +36,8 @@
         @click="activeMode = 'solved'"
       >
         <span class="tab-icon">💡</span>
-        <span class="tab-title">База разобранных задач</span>
+        <span class="tab-title-full">База разобранных задач</span>
+        <span class="tab-title-short">Разборы</span>
         <span class="tab-counter">{{ solvedTasks.length }}</span>
       </button>
       <button
@@ -46,7 +47,8 @@
         @click="activeMode = 'practice'"
       >
         <span class="tab-icon">🎯</span>
-        <span class="tab-title">Открытый практикум</span>
+        <span class="tab-title-full">Открытый практикум</span>
+        <span class="tab-title-short">Практикум</span>
         <span class="tab-badge-xp">+15 XP</span>
       </button>
       <button
@@ -57,7 +59,8 @@
         @click="switchModeToClosed"
       >
         <span class="tab-icon">🔒</span>
-        <span class="tab-title">Закрытый банк задач</span>
+        <span class="tab-title-full">Закрытый банк задач</span>
+        <span class="tab-title-short">Закрытый банк</span>
         <span class="tab-badge-xp closed-xp">+25 XP</span>
       </button>
     </div>
@@ -1379,23 +1382,35 @@ function createRequestFromTask(task) {
   padding: 4px;
   border-radius: var(--radius-lg);
   gap: 4px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .mode-tab-btn {
-  flex: 1;
+  flex: 1 1 0;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 10px 16px;
+  gap: 6px;
+  padding: 9px 8px;
   background: transparent;
   border: none;
   border-radius: var(--radius-md);
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 600;
   color: #475569;
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.tab-title-full {
+  display: inline;
+}
+
+.tab-title-short {
+  display: none;
 }
 
 .mode-tab-btn:hover {
@@ -1435,6 +1450,33 @@ function createRequestFromTask(task) {
   padding: 1px 7px;
   border-radius: var(--radius-pill);
   border: 1px solid #fde68a;
+}
+
+@media (max-width: 640px) {
+  .mode-tabs {
+    gap: 3px;
+    padding: 3px;
+  }
+  .mode-tab-btn {
+    padding: 8px 4px;
+    font-size: 11px;
+    gap: 3px;
+  }
+  .tab-title-full {
+    display: none;
+  }
+  .tab-title-short {
+    display: inline;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .tab-badge-xp, .tab-counter {
+    font-size: 9.5px;
+    padding: 1px 4px;
+  }
+  .tab-icon {
+    font-size: 13px;
+  }
 }
 
 /* ПОИСК */

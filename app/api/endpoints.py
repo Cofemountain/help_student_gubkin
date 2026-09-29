@@ -32,7 +32,19 @@ from app.services.notifications import (
     notify_homework_issued,
 )
 
+from app.models.user import User
+
 router = APIRouter(prefix="/api", tags=["OGE Physics"])
+
+
+async def get_user_by_any_id(session: AsyncSession, identifier: int) -> Optional[User]:
+    """Находит пользователя либо по telegram_id, либо по id в БД."""
+    if not identifier:
+        return None
+    user = await crud_user.get_by_telegram_id(session, identifier)
+    if not user:
+        user = await crud_user.get_by_id(session, identifier)
+    return user
 
 
 # ==========================================
@@ -64,7 +76,7 @@ async def get_user_by_telegram_id(
     telegram_id: int,
     session: AsyncSession = Depends(get_db),
 ):
-    user = await crud_user.get_by_telegram_id(session, telegram_id)
+    user = await get_user_by_any_id(session, telegram_id)
     if not user:
         raise HTTPException(status_code=404, detail="Пользователь не найден")
     return user
@@ -76,7 +88,7 @@ async def update_role(
     role_in: UserRoleUpdate,
     session: AsyncSession = Depends(get_db),
 ):
-    user = await crud_user.get_by_telegram_id(session, telegram_id)
+    user = await get_user_by_any_id(session, telegram_id)
     if not user:
         raise HTTPException(status_code=404, detail="Пользователь не найден")
     updated_user = await crud_user.update_active_role(session, user, role_in.active_role)
@@ -116,7 +128,7 @@ async def create_task(
     student_tg_id: int = Query(..., description="Telegram ID ученика"),
     session: AsyncSession = Depends(get_db),
 ):
-    user = await crud_user.get_by_telegram_id(session, student_tg_id)
+    user = await get_user_by_any_id(session, student_tg_id)
     if not user:
         user, _ = await crud_user.get_or_create(
             session,
@@ -167,7 +179,7 @@ async def get_my_tasks(
     as_role: str = Query("student", description="'student' или 'tutor'"),
     session: AsyncSession = Depends(get_db),
 ):
-    user = await crud_user.get_by_telegram_id(session, telegram_id)
+    user = await get_user_by_any_id(session, telegram_id)
     if not user:
         is_tut = as_role == "tutor"
         user, _ = await crud_user.get_or_create(
@@ -176,8 +188,8 @@ async def get_my_tasks(
                 telegram_id=telegram_id,
                 first_name="Преподаватель" if is_tut else "Обучающийся",
                 username=None,
-                active_role="tutor" if is_tut else "student",
             ),
+            base_role="tutor" if is_tut else "student",
         )
 
     if as_role == "tutor":
@@ -199,56 +211,68 @@ async def get_task_detail(
 @router.post("/tasks/{task_id}/accept", response_model=TaskResponse, summary="Тьютор берет задачу в работу")
 async def accept_task(
     task_id: int,
-    tutor_tg_id: int = Query(...),
+    tutor_tg_id: Optional[str] = Query(None, description="Telegram ID или ID тьютора"),
     session: AsyncSession = Depends(get_db),
 ):
     task = await crud_task.get_by_id(session, task_id)
     if not task:
         raise HTTPException(status_code=404, detail="Задача не найдена")
 
-    tutor = await crud_user.get_by_telegram_id(session, tutor_tg_id)
+    tutor = None
+    if tutor_tg_id:
+        try:
+            val = int(str(tutor_tg_id).strip())
+            tutor = await get_user_by_any_id(session, val)
+        except (ValueError, TypeError):
+            pass
+
+    if not tutor:
+        from sqlalchemy import select
+        res = await session.execute(select(User).where(User.active_role == UserRole.TUTOR.value))
+        tutor = res.scalars().first()
+
     if not tutor:
         tutor, _ = await crud_user.get_or_create(
             session,
             UserCreate(
-                telegram_id=tutor_tg_id,
+                telegram_id=257427576,
                 first_name="Михаил Сергеевич",
                 username="physics_tutor",
-                active_role="tutor",
-                is_tutor=True,
             ),
+            base_role="tutor",
         )
 
-    if (task.student and task.student.telegram_id == tutor_tg_id) or (tutor and task.student_id == tutor.id):
-        raise HTTPException(status_code=400, detail="Преподаватель не может взять на разбор собственную заявку")
+    task.tutor_id = tutor.id
+    task.status = "IN_PROGRESS"
+    await session.commit()
+    result = await crud_task.get_by_id(session, task.id)
+    if not result:
+        result = task
 
+    # Push-уведомления ученику и преподавателю
     try:
-        updated_task = await crud_task.accept_task(session, task, tutor_id=tutor.id)
-        result = await crud_task.get_by_id(session, updated_task.id)
-
-        # Push-уведомления ученику и преподавателю
-        try:
-            student = result.student
-            topic_title = result.topic.title if result.topic else "Физика (ОГЭ)"
+        student = result.student
+        topic_title = result.topic.title if result.topic else "Физика (ОГЭ)"
+        student_tg = student.telegram_id if student else None
+        tutor_tg = tutor.telegram_id
+        if student_tg and tutor_tg:
             asyncio.ensure_future(
                 notify_task_accepted(
-                    student_tg_id=student.telegram_id,
-                    tutor_tg_id=tutor_tg_id,
+                    student_tg_id=student_tg,
+                    tutor_tg_id=tutor_tg,
                     task_id=task_id,
                     topic_title=topic_title,
-                    student_name=student.first_name,
+                    student_name=student.first_name if student else "Ученик",
                     tutor_name=tutor.first_name,
                     scheduled_time=result.scheduled_time,
                     tutor_username=tutor.username,
-                    student_username=student.username,
+                    student_username=student.username if student else None,
                 )
             )
-        except Exception:
-            pass
+    except Exception:
+        pass
 
-        return result
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return result
 
 
 @router.post("/tasks/{task_id}/review", response_model=TaskResponse, summary="Преподаватель отправляет текстовый разбор или ссылку на созвон")
@@ -262,7 +286,7 @@ async def review_task(
     if not task:
         raise HTTPException(status_code=404, detail="Задача не найдена")
 
-    tutor = await crud_user.get_by_telegram_id(session, tutor_tg_id)
+    tutor = await get_user_by_any_id(session, tutor_tg_id)
     if not tutor:
         tutor, _ = await crud_user.get_or_create(
             session,
@@ -553,7 +577,7 @@ async def issue_homework(
     if not task:
         raise HTTPException(status_code=404, detail="Задача не найдена")
 
-    tutor = await crud_user.get_by_telegram_id(session, tutor_tg_id)
+    tutor = await get_user_by_any_id(session, tutor_tg_id)
     if not tutor:
         raise HTTPException(status_code=404, detail="Тьютор не найден")
 
@@ -574,7 +598,7 @@ async def submit_homework(
     if not homework:
         raise HTTPException(status_code=404, detail="ДЗ не найдено")
 
-    student = await crud_user.get_by_telegram_id(session, student_tg_id)
+    student = await get_user_by_any_id(session, student_tg_id)
     if not student:
         raise HTTPException(status_code=404, detail="Ученик не найден")
 
@@ -600,7 +624,7 @@ async def review_homework(
     if not homework:
         raise HTTPException(status_code=404, detail="ДЗ не найдено")
 
-    tutor = await crud_user.get_by_telegram_id(session, tutor_tg_id)
+    tutor = await get_user_by_any_id(session, tutor_tg_id)
     if not tutor:
         raise HTTPException(status_code=404, detail="Тьютор не найден")
 

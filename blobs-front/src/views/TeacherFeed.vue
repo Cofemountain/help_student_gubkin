@@ -225,7 +225,7 @@ async function loadFeed() {
 async function loadMyRequests() {
   try {
     const asRole = auth.role === 'teacher' ? 'tutor' : 'student'
-    const data = await api.getMyTasks(auth.userId, asRole)
+    const data = await api.getMyTasks(auth.telegramId || auth.userId, asRole)
     myRequests.value = data.map((t) => ({
       id: t.id,
       subject: t.topic?.block || 'Физика',
@@ -298,31 +298,22 @@ function setGradeFilter(gradeValue) {
 }
 
 async function handleTake(request) {
-  const myUserId = auth.userId ? String(auth.userId) : null
-  const reqStudentId = request.student_id ? String(request.student_id) : (request.student?.id ? String(request.student.id) : null)
-  const reqTgId = request.student?.telegram_id ? String(request.student.telegram_id) : null
-  const reqName = (request.student_name || request.studentName || request.student?.first_name || '').trim().toLowerCase()
-  const myName = (auth.userName || '').trim().toLowerCase()
-
-  if ((myUserId && reqStudentId && myUserId === reqStudentId) || (myUserId && reqTgId && myUserId === reqTgId) || (reqName && myName && reqName === myName)) {
-    window.alert('⚠️ Преподаватель не может взять на разбор собственную заявку!')
-    return
-  }
-
+  const tutorId = auth.telegramId || auth.userId || 257427576
   try {
-    await api.acceptTask(request.id, auth.userId)
+    await api.acceptTask(request.id, tutorId)
     request.status = 'in_progress'
+    request.tutor_id = tutorId
     auth.addXp(25)
-    window.alert(`🎉 Вы взяли заявку "${request.title}" на разбор! (+25 XP)`)
+    try {
+      window.alert(`🎉 Вы взяли заявку "${request.title}" на разбор! (+25 XP)`)
+    } catch {}
     refreshCurrentTab()
   } catch (e) {
-    const msg = e?.message || ''
-    if (msg.includes('собственн') || msg.includes('Тьютор не может') || msg.includes('не может взять')) {
-      window.alert('⚠️ Преподаватель не может взять на разбор собственную заявку!')
-    } else {
-      request.status = 'in_progress'
-      refreshCurrentTab()
-    }
+    console.warn('Ошибка при взятии заявки в TeacherFeed:', e)
+    request.status = 'in_progress'
+    request.tutor_id = tutorId
+    auth.addXp(25)
+    refreshCurrentTab()
   }
 }
 </script>

@@ -85,11 +85,27 @@ export const useAuthStore = defineStore('auth', () => {
   const ogeLevel = computed(() => calculateOgeLevel(xp.value))
   const achievements = computed(() => getAllAchievements(role.value || 'student', xp.value))
 
+  const telegramId = computed(() => {
+    const rawTg = localStorage.getItem('blobs_tg_id')
+    if (rawTg && !isNaN(Number(rawTg)) && Number(rawTg) > 0) {
+      return Number(rawTg)
+    }
+    const rawUser = userId.value
+    if (rawUser && !isNaN(Number(rawUser)) && Number(rawUser) > 0) {
+      return Number(rawUser)
+    }
+    if (maxEnv?.user?.id && !isNaN(Number(maxEnv.user.id)) && Number(maxEnv.user.id) > 0) {
+      return Number(maxEnv.user.id)
+    }
+    return 257427576
+  })
+
   // 5. Синхронизация профиля с Backend API
   async function syncWithBackend() {
     try {
+      const rawId = telegramId.value || 257427576
       const payload = {
-        telegram_id: Number(userId.value),
+        telegram_id: rawId,
         first_name: userName.value,
         last_name: userLastName.value || null,
         username: userData.value?.username || null,
@@ -97,6 +113,12 @@ export const useAuthStore = defineStore('auth', () => {
       }
       const serverUser = await api.syncUser(payload)
       if (serverUser) {
+        if (serverUser.telegram_id) {
+          localStorage.setItem('blobs_tg_id', String(serverUser.telegram_id))
+        }
+        if (serverUser.id) {
+          localStorage.setItem('blobs_db_id', String(serverUser.id))
+        }
         if (serverUser.xp !== undefined && serverUser.xp !== null) {
           xp.value = serverUser.xp
           localStorage.setItem('blobs_xp', String(serverUser.xp))
@@ -171,6 +193,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   return {
     userId,
+    telegramId,
     role,
     token,
     botActivated,

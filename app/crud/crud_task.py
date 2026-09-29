@@ -73,11 +73,12 @@ class CRUDTask:
         """Получение задач для доски (по умолчанию только OPEN)."""
         query = (
             select(Task)
-            .join(Topic, Task.topic_id == Topic.id)
+            .outerjoin(Topic, Task.topic_id == Topic.id)
             .options(
                 selectinload(Task.topic),
                 selectinload(Task.student),
                 selectinload(Task.tutor),
+                selectinload(Task.homework),
             )
             .order_by(Task.id.desc(), Task.created_at.desc())
         )
@@ -149,8 +150,6 @@ class CRUDTask:
         """Тьютор берет задачу в работу (OPEN -> IN_PROGRESS)."""
         if task.status != TaskStatus.OPEN.value:
             raise ValueError(f"Нельзя взять в работу задачу в статусе {task.status}")
-        if task.student_id == tutor_id:
-            raise ValueError("Тьютор не может взять собственную задачу")
 
         task.tutor_id = tutor_id
         task.status = TaskStatus.IN_PROGRESS.value
