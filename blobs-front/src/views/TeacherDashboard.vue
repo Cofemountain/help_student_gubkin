@@ -5,7 +5,7 @@
       <div class="hero-top-row">
         <span class="role-badge">👨‍🏫 Преподаватель физики</span>
         <router-link to="/achievements" class="hero-xp-chip">
-          {{ auth.currentTitle.badge }} {{ auth.xp }} XP →
+          {{ auth.currentTitle.badge }} {{ auth.xp }} XP
         </router-link>
       </div>
 

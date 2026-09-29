@@ -40,8 +40,6 @@ COPY alembic/ ./alembic/
 COPY alembic.ini ./
 COPY main.py ./
 COPY bot_max.py ./
-COPY tasks_bank.json ./
-COPY tasks_bank.sql ./
 
 # Копируем собранный фронтенд из Stage 1 в blobs-front/dist
 COPY --from=frontend-builder /build/dist ./blobs-front/dist

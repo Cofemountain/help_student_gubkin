@@ -7,7 +7,7 @@
           ОГЭ: {{ auth.ogeLevel.title }}
         </span>
         <router-link to="/achievements" class="hero-xp-chip">
-          {{ auth.currentTitle.badge }} {{ auth.xp }} XP →
+          {{ auth.currentTitle.badge }} {{ auth.xp }} XP
         </router-link>
       </div>
 
@@ -123,6 +123,7 @@ async function loadStudentTasks() {
         requestType: t.request_type || 'TASK',
         telemostUrl: t.telemost_url || '',
         teacherResponse: t.teacher_response || '',
+        homework: t.homework || null,
         createdAt: t.created_at,
         created_at: t.created_at,
       }))

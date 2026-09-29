@@ -254,16 +254,6 @@
             </div>
           </div>
 
-            <!-- Кнопка «Выдать проверочную задачу из закрытого банка» для преподавателя -->
-            <div v-if="isTeacher && isInProgressOrUnderstood" class="call-finished-container">
-              <button
-                type="button"
-                class="call-done-btn"
-                @click="openClosedBankAssigner"
-              >
-                🔒 Выдать задачу из закрытого банка для ученика
-              </button>
-            </div>
 
           <!-- 3. ДЛЯ ПРЕПОДАВАТЕЛЯ В СТАТУСЕ «В РАБОТЕ»: ВПИСАТЬ РЕШЕНИЕ И ПРИКРЕПИТЬ ФОТО -->
           <div v-if="isTeacher && isInProgress && !isTelemost" class="teacher-solution-editor">
@@ -390,20 +380,44 @@
           </div>
 
           <!-- 6. ЕСЛИ НАЗНАЧЕНА ЗАДАЧА ИЗ ЗАКРЫТОГО БАНКА -->
-          <div v-if="request.homework" class="assigned-hw-block">
+          <div v-if="request.homework || isHwIssued" class="assigned-hw-block">
             <div class="hw-header">
               <span>🔒</span>
               <strong>Проверочная задача из закрытого банка:</strong>
             </div>
-            <p class="hw-text">{{ request.homework.task_text }}</p>
-            <div class="hw-status-row">
+
+            <!-- Текст задачи (если назначена) -->
+            <div v-if="request.homework && request.homework.task_text" class="hw-task-card">
+              <p class="hw-text">{{ request.homework.task_text }}</p>
+            </div>
+            <div v-else-if="!isTeacher" class="hw-waiting-prompt">
+              <p>⏳ Преподаватель подбирает проверочную задачу из закрытого банка. Она отобразится здесь сразу после выбора.</p>
+            </div>
+            <div v-else-if="isTeacher" class="hw-select-prompt">
+              <p>⚠️ Задача еще не прикреплена к заявке. Выберите задачу из закрытого банка для отправки ученику:</p>
+              <button type="button" class="call-done-btn" @click="openClosedBankAssigner">
+                🔒 Выбрать проверочную задачу из закрытого банка
+              </button>
+            </div>
+
+            <div v-if="request.homework" class="hw-status-row">
               <span class="hw-status-tag" :class="request.homework.status">
                 {{ request.homework.status === 'ACCEPTED' ? '✓ Ответ принят верно' : 'Ожидает решения ученика' }}
               </span>
             </div>
 
-            <!-- Форма решения для ученика (если еще не решена) -->
-            <div v-if="!isTeacher && request.homework.status !== 'ACCEPTED' && !isCompleted" class="hw-student-solve-box">
+            <!-- Для преподавателя: статус ожидания решения -->
+            <div v-if="isTeacher && request.homework" class="hw-teacher-status-box">
+              <span v-if="request.homework.status === 'ACCEPTED'">
+                🎉 Ученик успешно решил проверочную задачу! Заявка закрыта, баллы начислены (+150 XP).
+              </span>
+              <span v-else>
+                ⏳ Задача отправлена ученику. Заявка будет автоматически завершена (+150 XP), как только ученик введет правильный ответ.
+              </span>
+            </div>
+
+            <!-- Форма решения для ученика (если есть назначенная задача и она еще не решена) -->
+            <div v-if="!isTeacher && request.homework && request.homework.status !== 'ACCEPTED' && !isCompleted" class="hw-student-solve-box">
               <label class="field-label">Ваш числовой ответ на задачу:</label>
               <div class="hw-input-row">
                 <input
@@ -431,7 +445,7 @@
           </div>
 
           <!-- БЛОК ДЛЯ ПРЕПОДАВАТЕЛЯ: ВЫДАЧА ЗАДАЧИ ИЗ ЗАКРЫТОГО БАНКА -->
-          <div v-if="isTeacher && isInProgressOrUnderstood && !request.homework" class="teacher-understood-alert">
+          <div v-if="isTeacher && isInProgressOrUnderstood && !request.homework && !isHwIssued" class="teacher-understood-alert">
             <div class="tua-header">
               <span class="tua-icon">🎓</span>
               <div>
@@ -590,25 +604,34 @@ const telemostLink = computed(() => {
   }
   return url
 })
-const formattedShortTime = computed(() => {
-  const raw = props.request.created_at || props.request.createdAt
-  if (!raw) return 'Недавно'
+function parseUtcDate(raw) {
+  if (!raw) return null
   try {
-    const d = new Date(raw)
-    if (isNaN(d.getTime())) return 'Недавно'
-    const now = new Date()
-    const isToday = d.toDateString() === now.toDateString()
-    const hours = String(d.getHours()).padStart(2, '0')
-    const mins = String(d.getMinutes()).padStart(2, '0')
-    if (isToday) {
-      return `${hours}:${mins}`
+    let str = String(raw).trim()
+    str = str.replace(' ', 'T')
+    if (!str.endsWith('Z') && !/[+-]\d{2}:?\d{2}$/.test(str)) {
+      str += 'Z'
     }
-    const day = String(d.getDate()).padStart(2, '0')
-    const month = String(d.getMonth() + 1).padStart(2, '0')
-    return `${day}.${month} ${hours}:${mins}`
+    const d = new Date(str)
+    return isNaN(d.getTime()) ? null : d
   } catch {
-    return 'Недавно'
+    return null
   }
+}
+
+const formattedShortTime = computed(() => {
+  const d = parseUtcDate(props.request.created_at || props.request.createdAt)
+  if (!d) return 'Недавно'
+  const now = new Date()
+  const isToday = d.toDateString() === now.toDateString()
+  const hours = String(d.getHours()).padStart(2, '0')
+  const mins = String(d.getMinutes()).padStart(2, '0')
+  if (isToday) {
+    return `${hours}:${mins}`
+  }
+  const day = String(d.getDate()).padStart(2, '0')
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  return `${day}.${month} ${hours}:${mins}`
 })
 
 const gradeShortLabel = computed(() => {
@@ -627,20 +650,14 @@ const topicShortLabel = computed(() => {
 })
 
 const formattedFullTime = computed(() => {
-  const raw = props.request.created_at || props.request.createdAt
-  if (!raw) return 'Время создания не указано'
-  try {
-    const d = new Date(raw)
-    if (isNaN(d.getTime())) return 'Время не указано'
-    return d.toLocaleString('ru-RU', {
-      day: '2-digit',
-      month: 'long',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  } catch {
-    return 'Время не указано'
-  }
+  const d = parseUtcDate(props.request.created_at || props.request.createdAt)
+  if (!d) return 'Время создания не указано'
+  return d.toLocaleString('ru-RU', {
+    day: '2-digit',
+    month: 'long',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
 })
 
 const showTelemostInput = ref(false)
@@ -760,9 +777,24 @@ const cardClasses = computed(() => ({
 
 
 // Навигация и закрытие модалки
-function openDetailModal() {
+async function openDetailModal() {
   imageLoadError.value = false
   showDetailModal.value = true
+  if (props.request && props.request.id) {
+    try {
+      const fresh = await api.getTaskDetail(props.request.id)
+      if (fresh) {
+        if (fresh.homework) props.request.homework = fresh.homework
+        if (fresh.status) props.request.status = fresh.status
+        if (fresh.teacher_response) props.request.teacher_response = fresh.teacher_response
+        if (fresh.telemost_url) props.request.telemost_url = fresh.telemost_url
+        if (fresh.solution_photo_url) props.request.solution_photo_url = fresh.solution_photo_url
+        if (fresh.student_clarification) props.request.student_clarification = fresh.student_clarification
+      }
+    } catch (e) {
+      console.warn('Не удалось обновить детали заявки:', e)
+    }
+  }
 }
 
 function closeDetailModal() {
@@ -923,20 +955,15 @@ async function confirmAssignHomework() {
   assigningHw.value = true
   try {
     const res = await api.assignBankHomework(selectedClosedTaskId.value, props.request.id, auth.userId)
-    await api.submitReview(props.request.id, {
-      telemost_url: telemostLink.value,
-      teacher_response: props.request.teacher_response || 'Разбор проведен. Назначена контрольная задача из закрытого банка.',
-      status: 'HW_ISSUED',
-    }, auth.userId)
 
     props.request.status = 'HW_ISSUED'
     props.request.homework = {
-      id: res.homework_id,
+      id: res.id,
       bank_task_id: res.bank_task_id,
       task_text: res.task_text || selectedTaskPreview.value?.statement || 'Контрольная задача из закрытого банка',
-      status: 'PENDING'
+      status: res.status || 'ISSUED'
     }
-    alert('🔒 Задача из закрытого банка успешно назначена! Ученик получил уведомление.')
+    alert('🔒 Задача из закрытого банка успешно назначена! Ученик получил уведомление в Telegram.')
     showClosedBankSelector.value = false
     emit('updated')
   } catch (err) {

@@ -3,6 +3,7 @@ from typing import Optional
 from pydantic import BaseModel, ConfigDict
 from app.schemas.topic import TopicResponse
 from app.schemas.user import UserResponse
+from app.schemas.homework import HomeworkResponse
 
 
 class TaskBase(BaseModel):
@@ -53,6 +54,7 @@ class TaskResponse(TaskBase):
     topic: Optional[TopicResponse] = None
     student: Optional[UserResponse] = None
     tutor: Optional[UserResponse] = None
+    homework: Optional[HomeworkResponse] = None
 
     model_config = ConfigDict(from_attributes=True)
 

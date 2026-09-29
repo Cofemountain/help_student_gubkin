@@ -50,6 +50,7 @@
         <span class="tab-badge-xp">+15 XP</span>
       </button>
       <button
+        v-if="auth.role === 'teacher'"
         type="button"
         class="mode-tab-btn"
         :class="{ active: activeMode === 'closed' }"
@@ -331,8 +332,8 @@
               <span class="tag-grade">{{ task.grade }} класс</span>
               <span class="tag-diff" :class="(task.difficulty || '').toLowerCase()">{{ task.difficulty }}</span>
               <span class="tag-topic">{{ task.topic_title }}</span>
-              <span v-if="task.author" class="tag-author">
-                {{ task.author.includes('Камзеева') ? '🏛️' : '📖' }} {{ task.author }}
+              <span class="tag-author">
+                {{ getTaskAuthor(task).includes('Камзеева') || getTaskAuthor(task).includes('ФИПИ') ? '🏛️' : '📖' }} {{ getTaskAuthor(task) }}
               </span>
             </div>
             <span v-if="solvedMap[task.id]" class="solved-badge">✓ Решено (+15 XP)</span>
@@ -512,8 +513,8 @@
               <span class="tag-grade">{{ task.grade }} класс</span>
               <span class="tag-diff" :class="(task.difficulty || '').toLowerCase()">{{ task.difficulty }}</span>
               <span class="tag-topic">{{ task.topic_title }}</span>
-              <span v-if="task.author" class="tag-author">
-                {{ task.author.includes('Камзеева') ? '🏛️' : '📖' }} {{ task.author }}
+              <span class="tag-author">
+                {{ getTaskAuthor(task).includes('Камзеева') || getTaskAuthor(task).includes('ФИПИ') ? '🏛️' : '📖' }} {{ getTaskAuthor(task) }}
               </span>
             </div>
             <span v-if="closedSolvedMap[task.id]" class="solved-badge closed-solved">✓ Решено верно (+25 XP)</span>
@@ -746,8 +747,18 @@ import { useAuthStore } from '../stores/auth'
 const router = useRouter()
 const auth = useAuthStore()
 
-// Режим: 'solved' (База разобранных задач), 'practice' (Открытый банк) или 'closed' (Закрытый банк)
+// Режим: 'solved' (База разобранных задач), 'practice' (Открытый банк) или 'closed' (Закрытый банк для преподавателей)
 const activeMode = ref('solved')
+
+function getTaskAuthor(task) {
+  if (!task) return 'А. В. Пёрышкин'
+  if (task.author && task.author.trim()) return task.author.trim()
+  const g = task.grade || 7
+  if (g === 9 || (task.topic_title && task.topic_title.includes('ОГЭ')) || (task.title && task.title.includes('ОГЭ'))) {
+    return 'ФИПИ (ОГЭ, Е. Е. Камзеева)'
+  }
+  return 'А. В. Пёрышкин'
+}
 
 const blocks = [
   { key: 'MECHANICS', label: '⚙️ Механика' },
@@ -820,6 +831,9 @@ function handleKeydown(e) {
 }
 
 onMounted(() => {
+  if (auth.role !== 'teacher' && activeMode.value === 'closed') {
+    activeMode.value = 'practice'
+  }
   window.addEventListener('keydown', handleKeydown)
   loadSolvedTasks()
   loadPracticeTasks()
@@ -1092,6 +1106,10 @@ const closedShowHint = reactive({})
 const closedShowSolution = reactive({})
 
 function switchModeToClosed() {
+  if (auth.role !== 'teacher') {
+    activeMode.value = 'practice'
+    return
+  }
   activeMode.value = 'closed'
   if (closedTasks.value.length === 0) {
     loadClosedTasks()
@@ -1192,7 +1210,7 @@ function createRequestFromTask(task) {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-  padding-bottom: var(--space-6);
+  padding-bottom: calc(115px + env(safe-area-inset-bottom, 24px));
 }
 
 /* ШАПКА */
@@ -2105,6 +2123,20 @@ function createRequestFromTask(task) {
   border-radius: var(--radius-pill);
 }
 
+.tag-author {
+  background: #ede9fe;
+  color: #5b21b6;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  border: 1px solid #ddd6fe;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+}
+
 .task-title {
   margin: 0;
   font-size: 16px;
@@ -2127,39 +2159,68 @@ function createRequestFromTask(task) {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .input-row {
   display: flex;
+  align-items: stretch;
   gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .answer-input {
-  flex: 1;
-  padding: 8px 12px;
-  border: 1px solid #cbd5e1;
+  flex: 1 1 0%;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 9px 12px;
+  border: 1.5px solid #cbd5e1;
   border-radius: var(--radius-sm);
   font-size: 14px;
   outline: none;
+  background: #ffffff;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .answer-input:focus {
   border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
 .check-btn {
+  flex-shrink: 0;
+  white-space: nowrap;
   background: #0f172a;
   color: white;
   border: none;
-  padding: 8px 16px;
+  padding: 9px 16px;
   border-radius: var(--radius-sm);
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 13.5px;
+  font-weight: 700;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+.check-btn:hover:not(:disabled) {
+  background: #1e293b;
 }
 .check-btn:disabled {
-  opacity: 0.5;
+  opacity: 0.55;
   cursor: not-allowed;
+}
+
+@media (max-width: 480px) {
+  .task-card {
+    padding: 14px 14px;
+  }
+  .answer-box {
+    padding: 10px 10px;
+  }
 }
 
 .result-message {

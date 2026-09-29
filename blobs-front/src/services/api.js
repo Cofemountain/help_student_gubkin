@@ -138,6 +138,17 @@ export const api = {
   },
 
   // --- Домашние задания ---
+  assignBankHomework: (bankTaskId, taskId, tutorTgId) => {
+    return request('/bank/assign-homework', {
+      method: 'POST',
+      body: JSON.stringify({
+        bank_task_id: Number(bankTaskId),
+        task_id: Number(taskId),
+        tutor_tg_id: Number(tutorTgId || 1),
+      }),
+    })
+  },
+
   issueHomework: (taskId, homeworkData, tutorTgId) => {
     return request(`/tasks/${taskId}/homework?tutor_tg_id=${encodeURIComponent(tutorTgId)}`, {
       method: 'POST',

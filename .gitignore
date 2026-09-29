@@ -63,3 +63,8 @@ blobs-front/dist/
 *.swo
 .DS_Store
 Thumbs.db
+
+# Documentation & large PDFs
+TECHNICAL_INFO.md
+*.pdf
+

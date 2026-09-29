@@ -67,6 +67,11 @@ def _btn_link(text: str, url: str) -> Dict[str, Any]:
     return {"type": "link", "text": text, "url": url}
 
 
+def _btn_open_app(text: str, web_app: str = "t334_hakaton_max_bot") -> Dict[str, Any]:
+    """Кнопка нативного открытия Mini App внутри МАКС."""
+    return {"type": "open_app", "text": text, "web_app": web_app, "contact_id": 398783926}
+
+
 async def notify_task_accepted(
     student_tg_id: int, tutor_tg_id: int, task_id: int,
     topic_title: str, student_name: str, tutor_name: str,
@@ -83,6 +88,7 @@ async def notify_task_accepted(
         f"Преподаватель готовит решение или созвон. После проверки вы сможете закрыть заявку или задать вопрос."
     )
     s_buttons: List[List[Dict[str, Any]]] = [
+        [_btn_open_app("📱 Открыть мои заявки")],
         [_btn_cb("✅ Всё понятно, вопрос решён", f"solved:{task_id}")]
     ]
 
@@ -117,6 +123,7 @@ async def notify_review_submitted(
         )
         buttons: List[List[Dict[str, Any]]] = [
             [_btn_link("📹 Подключиться к видеовстрече", telemost_url)],
+            [_btn_open_app("📱 Открыть мои заявки")],
             [_btn_cb("✅ Всё понятно, вопрос решён", f"solved:{task_id}")],
         ]
     elif teacher_response:
@@ -130,6 +137,7 @@ async def notify_review_submitted(
             f"Ознакомьтесь с разбором в приложении. Если всё понятно — закройте заявку, если нет — напишите уточнение."
         )
         buttons = [
+            [_btn_open_app("📱 Открыть мои заявки")],
             [_btn_cb("✅ Всё понятно, вопрос решён", f"solved:{task_id}")]
         ]
     else:
@@ -227,7 +235,9 @@ async def notify_homework_issued(
         f"🎯 Задание: {task_name}\n\n"
         f"Откройте карточку заявки в приложении, решите задачу и введите ответ для закрытия темы и получения баллов (+100 XP)!"
     )
-    buttons = [[_btn_cb("📝 Открыть задачу", f"view_task:{task_id}")]]
+    buttons = [
+        [_btn_open_app("📝 Открыть мои заявки")],
+    ]
     await notifier.send(student_tg_id, text, buttons)
     logger.info(f"[notify] task={task_id} hw issued: s={student_tg_id}")
 

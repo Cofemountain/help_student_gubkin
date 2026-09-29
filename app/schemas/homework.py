@@ -29,6 +29,7 @@ class HomeworkResponse(HomeworkBase):
     solution_photo_url: Optional[str] = None
     status: str
     feedback: Optional[str] = None
+    bank_task_id: Optional[int] = None
     issued_at: datetime
     submitted_at: Optional[datetime] = None
     reviewed_at: Optional[datetime] = None

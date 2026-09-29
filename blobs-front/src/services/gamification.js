@@ -5,21 +5,21 @@
 export const OGE_LEVELS = {
   GRADE_3: {
     grade: '3',
-    title: 'Порог сдачи (Оценка 3)',
+    title: 'Порог сдачи ОГЭ',
     minXp: 0,
     maxXp: 200,
     color: '#f59e0b',
   },
   GRADE_4: {
     grade: '4',
-    title: 'Уверенная 4-ка (Оценка 4)',
+    title: 'Уверенная 4-ка',
     minXp: 201,
     maxXp: 600,
     color: '#3b82f6',
   },
   GRADE_5: {
     grade: '5',
-    title: 'Отличник ОГЭ (Оценка 5)',
+    title: 'Отличник ОГЭ',
     minXp: 601,
     maxXp: Infinity,
     color: '#10b981',

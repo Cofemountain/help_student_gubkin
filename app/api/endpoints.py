@@ -797,9 +797,18 @@ async def assign_closed_bank_task_as_homework(
     if not task:
         raise HTTPException(status_code=404, detail="Заявка разбора не найдена")
 
-    tutor = await crud_user.get_by_telegram_id(session, req.tutor_tg_id)
-    if not tutor or task.tutor_id != tutor.id:
-        raise HTTPException(status_code=403, detail="Вы не являетесь преподавателем по этой задаче")
+    tutor = None
+    if req.tutor_tg_id:
+        tutor = await crud_user.get_by_telegram_id(session, req.tutor_tg_id)
+        if not tutor:
+            tutor = await crud_user.get_by_id(session, req.tutor_tg_id)
+
+    if not tutor and task.tutor_id:
+        tutor = await crud_user.get_by_id(session, task.tutor_id)
+
+    tutor_id = tutor.id if tutor else (task.tutor_id or 1)
+    if not task.tutor_id:
+        task.tutor_id = tutor_id
 
     hw_text = (
         f"🔒 ДЗ из закрытого банка ({bank_task.grade} класс, {bank_task.difficulty}):\n"
@@ -811,10 +820,12 @@ async def assign_closed_bank_task_as_homework(
     hw = await crud_homework.create(
         session=session,
         task=task,
-        tutor_id=tutor.id,
+        tutor_id=tutor_id,
         homework_in=hw_in,
         bank_task_id=bank_task.id,
     )
+    task.status = "HW_ISSUED"
+    await session.commit()
 
     # Уведомляем ученика о выданной задаче из закрытого банка
     try:
@@ -832,7 +843,8 @@ async def assign_closed_bank_task_as_homework(
     except Exception:
         pass
 
-    return hw
+    result_hw = await crud_homework.get_by_id(session, hw.id)
+    return result_hw or hw
 
 
 @router.get(
