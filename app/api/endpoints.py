@@ -7,17 +7,29 @@ from app.crud.crud_user import crud_user
 from app.crud.crud_topic import crud_topic
 from app.crud.crud_task import crud_task
 from app.crud.crud_homework import crud_homework
+from app.crud.crud_bank_task import crud_bank_task
 from app.models.user import UserRole
+from app.models.xp_transaction import XPReason
 from app.schemas.user import UserCreate, UserRoleUpdate, UserResponse
 from app.schemas.topic import TopicResponse
 from app.schemas.task import TaskCreate, TaskResponse, TaskReviewCreate, TaskClarifyRequest
 from app.schemas.homework import HomeworkCreate, HomeworkSubmit, HomeworkReview, HomeworkResponse
+from app.schemas.bank_task import (
+    BankTaskStudentResponse,
+    BankTaskTutorResponse,
+    CheckAnswerRequest,
+    CheckAnswerResponse,
+    AssignHomeworkRequest,
+)
+from app.services.gamification import award_xp
 from app.services.notifications import (
     notify_task_accepted,
     notify_review_submitted,
     notify_task_completed,
     notify_new_task_to_tutors,
     notify_student_clarification,
+    notify_student_understood,
+    notify_homework_issued,
 )
 
 router = APIRouter(prefix="/api", tags=["OGE Physics"])
@@ -308,7 +320,8 @@ async def create_telemost_room(
     if not task:
         raise HTTPException(status_code=404, detail="Задача не найдена")
 
-    room_url = f"https://meet.jit.si/max_oge_physics_task{task_id}_{int(time.time())}"
+    room_code = 7000000000 + (task_id * 10007) % 2000000000
+    room_url = f"https://telemost.yandex.ru/j/{room_code}"
     updated_task = await crud_task.submit_review(
         session,
         task,
@@ -350,7 +363,115 @@ async def clarify_task_endpoint(
     except Exception:
         pass
 
+@router.post("/tasks/{task_id}/understood", response_model=TaskResponse, summary="Ученик подтверждает понимание темы и ожидает контрольную задачу")
+async def mark_task_understood_endpoint(
+    task_id: int,
+    student_tg_id: int = Query(..., description="ID ученика"),
+    session: AsyncSession = Depends(get_db),
+):
+    task = await crud_task.get_by_id(session, task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Задача не найдена")
+
+    task.status = "UNDERSTOOD"
+    await session.flush()
+    result = await crud_task.get_by_id(session, task.id)
+
+    # Push-уведомление преподавателю о том, что ученик понял тему и ждет задачу
+    try:
+        if result.tutor:
+            topic_title = result.topic.title if result.topic else "Физика (ОГЭ)"
+            student_name = result.student.first_name if result.student else "Ученик"
+            asyncio.ensure_future(
+                notify_student_understood(
+                    tutor_tg_id=result.tutor.telegram_id,
+                    task_id=task_id,
+                    topic_title=topic_title,
+                    student_name=student_name,
+                )
+            )
+    except Exception:
+        pass
+
     return result
+
+
+@router.post("/tasks/{task_id}/check-homework", response_model=CheckAnswerResponse, summary="Проверить ответ ученика на контрольную задачу из закрытого банка")
+async def check_task_homework_endpoint(
+    task_id: int,
+    check_in: CheckAnswerRequest,
+    session: AsyncSession = Depends(get_db),
+):
+    task = await crud_task.get_by_id(session, task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Задача не найдена")
+
+    hw = await crud_homework.get_by_task_id(session, task_id)
+    if not hw:
+        raise HTTPException(status_code=400, detail="К этой заявке еще не прикреплено задание")
+
+    bank_task = None
+    if hw.bank_task_id:
+        bank_task = await crud_bank_task.get_by_id(session, hw.bank_task_id)
+
+    correct_answer = bank_task.answer if bank_task else ""
+    solution = bank_task.solution if bank_task else ""
+
+    user_clean = check_in.user_answer.strip().lower().replace(",", ".")
+    correct_clean = correct_answer.strip().lower().replace(",", ".")
+
+    is_correct = (user_clean == correct_clean) if correct_clean else True
+
+    if is_correct:
+        # Решение принято верно -> Завершаем ДЗ и заявку, начисляем XP обоим!
+        tutor_id = task.tutor_id or (task.tutor.id if task.tutor else None)
+        if tutor_id:
+            await crud_homework.review_solution(
+                session=session,
+                homework=hw,
+                is_accepted=True,
+                feedback="Ответ верный! Тема полностью усвоена и закреплена.",
+                tutor_id=tutor_id,
+            )
+        else:
+            hw.status = "ACCEPTED"
+            task.status = "COMPLETED"
+            await session.flush()
+
+        await session.commit()
+
+        # Уведомления обоим
+        try:
+            if task.tutor:
+                topic_title = task.topic.title if task.topic else "Физика (ОГЭ)"
+                student_name = task.student.first_name if task.student else "Ученик"
+                asyncio.ensure_future(
+                    notify_task_completed(
+                        tutor_tg_id=task.tutor.telegram_id,
+                        task_id=task_id,
+                        topic_title=topic_title,
+                        student_name=student_name,
+                        tutor_xp=150,
+                    )
+                )
+        except Exception:
+            pass
+
+        return CheckAnswerResponse(
+            is_correct=True,
+            correct_answer=correct_answer,
+            solution=solution,
+            xp_awarded=100,
+            message="🎉 Отлично! Ответ верный. Тема полностью закреплена и вопрос успешно закрыт (+100 XP)!",
+        )
+    else:
+        return CheckAnswerResponse(
+            is_correct=False,
+            correct_answer=None,
+            solution=None,
+            xp_awarded=0,
+            message="❌ Ответ не сошёлся. Проверьте расчеты, формулы и единицы измерения и попробуйте ещё раз!",
+        )
 
 
 @router.post("/tasks/{task_id}/complete", response_model=TaskResponse, summary="Подтвердить, что вопрос решен")
@@ -467,16 +588,6 @@ async def review_homework(
 # ==========================================
 # 5. БАНК ЗАДАЧ (ОТКРЫТЫЙ И ЗАКРЫТЫЙ) ДЛЯ FRONTEND
 # ==========================================
-from app.crud.crud_bank_task import crud_bank_task
-from app.schemas.bank_task import (
-    BankTaskStudentResponse,
-    BankTaskTutorResponse,
-    CheckAnswerRequest,
-    CheckAnswerResponse,
-    AssignHomeworkRequest,
-)
-from app.services.gamification import award_xp
-from app.models.xp_transaction import XPReason
 
 
 @router.get(
@@ -639,12 +750,31 @@ async def assign_closed_bank_task_as_homework(
     )
 
     hw_in = HomeworkCreate(task_text=hw_text)
-    return await crud_homework.create(
+    hw = await crud_homework.create(
         session=session,
         task=task,
         tutor_id=tutor.id,
         homework_in=hw_in,
+        bank_task_id=bank_task.id,
     )
+
+    # Уведомляем ученика о выданной задаче из закрытого банка
+    try:
+        student_tg_id = task.student.telegram_id if task.student else None
+        if student_tg_id:
+            topic_title = task.topic.title if task.topic else "Физика (ОГЭ)"
+            asyncio.ensure_future(
+                notify_homework_issued(
+                    student_tg_id=student_tg_id,
+                    task_id=task.id,
+                    topic_title=topic_title,
+                    task_name=bank_task.title,
+                )
+            )
+    except Exception:
+        pass
+
+    return hw
 
 
 @router.get(

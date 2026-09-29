@@ -35,18 +35,24 @@ class CRUDHomework:
         task: Task,
         tutor_id: int,
         homework_in: HomeworkCreate,
+        bank_task_id: Optional[int] = None,
     ) -> Homework:
         """Тьютор выдает ДЗ формата ОГЭ после проведенного разбора."""
-        if task.status != TaskStatus.IN_PROGRESS.value:
-            raise ValueError(f"Выдать ДЗ можно только для задачи в статусе IN_PROGRESS (текущий: {task.status})")
+        allowed_statuses = (TaskStatus.IN_PROGRESS.value, TaskStatus.UNDERSTOOD.value, TaskStatus.HW_ISSUED.value)
+        if task.status not in allowed_statuses:
+            raise ValueError(f"Выдать ДЗ можно только для задачи в статусе IN_PROGRESS или UNDERSTOOD (текущий: {task.status})")
         if task.tutor_id != tutor_id:
             raise ValueError("Выдать ДЗ может только назначенный на задачу тьютор")
+
+        task.status = TaskStatus.HW_ISSUED.value
 
         existing_hw = await self.get_by_task_id(session, task.id)
         if existing_hw:
             # Обновление существующего задания
             existing_hw.task_text = homework_in.task_text
             existing_hw.task_photo_url = homework_in.task_photo_url
+            if bank_task_id:
+                existing_hw.bank_task_id = bank_task_id
             existing_hw.status = HomeworkStatus.ISSUED.value
             existing_hw.issued_at = utc_now()
             await session.flush()
@@ -58,6 +64,7 @@ class CRUDHomework:
             student_id=task.student_id,
             task_text=homework_in.task_text,
             task_photo_url=homework_in.task_photo_url,
+            bank_task_id=bank_task_id,
             status=HomeworkStatus.ISSUED.value,
         )
         session.add(homework)

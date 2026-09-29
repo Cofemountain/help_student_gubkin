@@ -178,27 +178,27 @@
               <span class="tm-icon-large">📹</span>
               <div class="tm-details">
                 <strong>Индивидуальная видеоконсультация в Яндекс Телемосте</strong>
-                <p v-if="telemostLink">Комната создана. Перейдите по ссылке для проведения разбора:</p>
-                <p v-else>Нажмите для генерации быстрой комнаты для созвона с учеником:</p>
+                <p v-if="telemostLink">Комната Яндекс Телемост создана. Перейдите по ссылке для проведения видеоразбора:</p>
+                <p v-else>Нажмите для генерации комнаты в Яндекс Телемосте для созвона с учеником:</p>
                 <div class="tm-actions-row">
                   <a v-if="telemostLink" :href="telemostLink" target="_blank" rel="noopener" class="tm-connect-btn">
-                    📹 Подключиться к видеовстрече
+                    📹 Подключиться к Яндекс Телемосту
                   </a>
                   <button v-else type="button" class="tm-create-btn" @click="generateQuickRoom">
-                    ⚡ Создать комнату Телемост
+                    ⚡ Создать встречу в Яндекс Телемосте
                   </button>
                 </div>
               </div>
             </div>
 
-            <!-- Кнопка «Звонок прошёл -> Назначить ДЗ из закрытого банка» для преподавателя -->
-            <div v-if="isTeacher && isInProgress" class="call-finished-container">
+            <!-- Кнопка «Выдать проверочную задачу из закрытого банка» для преподавателя -->
+            <div v-if="isTeacher && isInProgressOrUnderstood" class="call-finished-container">
               <button
                 type="button"
                 class="call-done-btn"
                 @click="openClosedBankAssigner"
               >
-                📞 Звонок прошёл / Консультация проведена → Прикрепить ДЗ из закрытого банка
+                🔒 Выдать задачу из закрытого банка для ученика
               </button>
             </div>
           </div>
@@ -327,42 +327,96 @@
             </div>
           </div>
 
-          <!-- 6. ЕСЛИ НАЗНАЧЕНО ДЗ ИЗ ЗАКРЫТОГО БАНКА -->
+          <!-- 6. ЕСЛИ НАЗНАЧЕНА ЗАДАЧА ИЗ ЗАКРЫТОГО БАНКА -->
           <div v-if="request.homework" class="assigned-hw-block">
             <div class="hw-header">
               <span>🔒</span>
-              <strong>Назначено домашнее задание из закрытого банка:</strong>
+              <strong>Проверочная задача из закрытого банка:</strong>
             </div>
             <p class="hw-text">{{ request.homework.task_text }}</p>
-            <div class="hw-status-tag">Статус ДЗ: {{ request.homework.status }}</div>
+            <div class="hw-status-row">
+              <span class="hw-status-tag" :class="request.homework.status">
+                {{ request.homework.status === 'ACCEPTED' ? '✓ Ответ принят верно' : 'Ожидает решения ученика' }}
+              </span>
+            </div>
+
+            <!-- Форма решения для ученика (если еще не решена) -->
+            <div v-if="!isTeacher && request.homework.status !== 'ACCEPTED' && !isCompleted" class="hw-student-solve-box">
+              <label class="field-label">Ваш числовой ответ на задачу:</label>
+              <div class="hw-input-row">
+                <input
+                  v-model="homeworkAnswerInput"
+                  type="text"
+                  placeholder="Например: 12.5 или 4"
+                  class="hw-answer-input"
+                  :disabled="checkingHwAnswer"
+                  @keyup.enter="handleCheckHomeworkAnswer"
+                />
+                <button
+                  type="button"
+                  class="hw-check-btn"
+                  :disabled="checkingHwAnswer || !homeworkAnswerInput.trim()"
+                  @click="handleCheckHomeworkAnswer"
+                >
+                  <span v-if="checkingHwAnswer">⏳ Проверка...</span>
+                  <span v-else>🚀 Проверить ответ</span>
+                </button>
+              </div>
+              <p v-if="hwFeedbackMsg" class="hw-feedback-msg" :class="{ success: hwFeedbackSuccess, error: !hwFeedbackSuccess }">
+                {{ hwFeedbackMsg }}
+              </p>
+            </div>
           </div>
 
-          <!-- 7. БЛОК ПРОВЕРКИ И ЗАКРЫТИЯ ЗАЯВКИ УЧЕНИКОМ -->
-          <div v-if="!isTeacher && isInProgress && (teacherResponseText || telemostLink)" class="student-review-decision-card">
+          <!-- БЛОК ДЛЯ ПРЕПОДАВАТЕЛЯ: ВЫДАЧА ЗАДАЧИ ИЗ ЗАКРЫТОГО БАНКА -->
+          <div v-if="isTeacher && isInProgressOrUnderstood && !request.homework" class="teacher-understood-alert">
+            <div class="tua-header">
+              <span class="tua-icon">🎓</span>
+              <div>
+                <strong>{{ isUnderstood ? 'Ученик подтвердил понимание темы!' : 'Закрепление темы (Закрытый банк)' }}</strong>
+                <p>Выдайте проверочную задачу из закрытого банка. Только после верного решения учеником заявка будет завершена, и обоим начислятся баллы (+150 XP преподавателю / +100 XP ученику).</p>
+              </div>
+            </div>
+            <button
+              v-if="!showClosedBankSelector"
+              type="button"
+              class="call-done-btn"
+              @click="openClosedBankAssigner"
+            >
+              🔒 Выбрать задачу из закрытого банка для ученика
+            </button>
+          </div>
+
+          <!-- 7. БЛОК ПРОВЕРКИ И ПОДТВЕРЖДЕНИЯ УЧЕНИКОМ (ЕСЛИ ДЗ ЕЩЕ НЕ ВЫДАНО) -->
+          <div v-if="!isTeacher && (isInProgress || isUnderstood) && !request.homework && (teacherResponseText || telemostLink)" class="student-review-decision-card">
             <div class="srd-header">
               <span class="srd-icon">🎓</span>
               <div>
                 <strong>Разбор предоставлен преподавателем</strong>
-                <p>Ознакомьтесь с решением. Если вам всё понятно — закройте заявку. Если остались вопросы — задайте их здесь же, преподаватель дополнит ответ.</p>
+                <p>Ознакомьтесь с объяснением. Если вам всё понятно — подтвердите это, чтобы преподаватель выдал контрольную задачу из закрытого банка. Если остались вопросы — продолжите диалог.</p>
               </div>
             </div>
 
             <div class="srd-actions">
               <button
+                v-if="!isUnderstood"
                 type="button"
                 class="srd-confirm-btn"
                 :disabled="closingTask"
                 @click="handleStudentUnderstood"
               >
-                <span v-if="closingTask">⏳ Завершение заявки...</span>
-                <span v-else>✅ Всё понятно, вопрос решён (+50 XP)</span>
+                <span v-if="closingTask">⏳ Сохранение...</span>
+                <span v-else>💡 Всё понятно, готов к задаче</span>
               </button>
+              <div v-else class="understood-badge-pill">
+                ✓ Вы подтвердили, что всё понятно (преподаватель подбирает задачу...)
+              </div>
               <button
                 type="button"
                 class="srd-clarify-btn"
                 @click="toggleClarifyForm"
               >
-                ❓ Не понял / Задать вопрос по решению
+                ❓ Не понял / Продолжить диалог
               </button>
             </div>
 
@@ -393,44 +447,12 @@
           </div>
         </div>
 
-        <!-- Подвал модального окна -->
-        <div class="modal-footer">
-          <!-- Действия в зависимости от роли -->
-          <template v-if="isOpen && isTeacher && !isOwnTask">
-            <button type="button" class="action-btn take-btn" :disabled="taking" @click="handleTake">
-              <span v-if="taking">⏳ Беру...</span>
-              <span v-else>🤝 Взять на разбор</span>
-              <span class="xp-tag">+25 XP</span>
-            </button>
-          </template>
-          <span v-else-if="isOpen && isOwnTask" class="student-hint own-task-pill">
-            👤 Это ваша заявка (ожидает отклика преподавателя)
-          </span>
-
-          <template v-if="isInProgress && !isTeacher">
-            <button
-              v-if="teacherResponseText || telemostLink"
-              type="button"
-              class="action-btn complete-btn"
-              :disabled="closingTask"
-              @click="handleStudentUnderstood"
-            >
-              <span v-if="closingTask">⏳ Закрытие...</span>
-              <span v-else>✅ Всё понятно, закрыть заявку <span class="xp-tag">+50 XP</span></span>
-            </button>
-            <button
-              v-if="teacherResponseText || telemostLink"
-              type="button"
-              class="action-btn clarify-toggle-btn"
-              @click="showClarifyForm = !showClarifyForm"
-            >
-              ❓ Не понял
-            </button>
-          </template>
-
-          <!-- Кнопка Закрыть модальное окно -->
-          <button type="button" class="action-btn close-modal-btn" @click="closeDetailModal">
-            Закрыть окно
+        <!-- Подвал модального окна: только кнопка «Взять на разбор» если заявка открыта -->
+        <div class="modal-footer" v-if="isOpen && isTeacher && !isOwnTask">
+          <button type="button" class="action-btn take-btn" :disabled="taking" @click="handleTake">
+            <span v-if="taking">⏳ Беру...</span>
+            <span v-else>🤝 Взять на разбор</span>
+            <span class="xp-tag">+25 XP</span>
           </button>
         </div>
       </div>
@@ -526,6 +548,18 @@ const isInProgress = computed(() => {
   const s = (props.request.status || '').toUpperCase()
   return s === 'IN_PROGRESS' || s === 'ACCEPTED'
 })
+const isUnderstood = computed(() => {
+  const s = (props.request.status || '').toUpperCase()
+  return s === 'UNDERSTOOD'
+})
+const isHwIssued = computed(() => {
+  const s = (props.request.status || '').toUpperCase()
+  return s === 'HW_ISSUED' || !!props.request.homework
+})
+const isInProgressOrUnderstood = computed(() => {
+  const s = (props.request.status || '').toUpperCase()
+  return s === 'IN_PROGRESS' || s === 'ACCEPTED' || s === 'UNDERSTOOD' || s === 'HW_ISSUED'
+})
 const isCompleted = computed(() => {
   const s = (props.request.status || '').toUpperCase()
   return s === 'COMPLETED' || s === 'RESOLVED'
@@ -534,6 +568,8 @@ const isCompleted = computed(() => {
 const statusLabel = computed(() => {
   const s = (props.request.status || '').toUpperCase()
   if (s === 'OPEN' || s === 'NEW') return 'Открыта'
+  if (s === 'UNDERSTOOD') return '💡 Всё понятно (ждёт ДЗ)'
+  if (s === 'HW_ISSUED') return '🔒 Решает ДЗ'
   if (s === 'IN_PROGRESS' || s === 'ACCEPTED') {
     if (props.request.student_clarification) return '❓ Есть вопрос ученика'
     if (teacherResponseText.value || telemostLink.value) return '⏳ На проверке'
@@ -545,6 +581,7 @@ const statusLabel = computed(() => {
 const statusClass = computed(() => {
   const s = (props.request.status || '').toUpperCase()
   if (s === 'OPEN' || s === 'NEW') return 'status-open'
+  if (s === 'UNDERSTOOD' || s === 'HW_ISSUED') return 'status-progress'
   if (s === 'IN_PROGRESS' || s === 'ACCEPTED') return 'status-progress'
   if (s === 'COMPLETED' || s === 'RESOLVED') return 'status-done'
   return 'status-open'
@@ -624,9 +661,10 @@ onUnmounted(() => {
   window.removeEventListener('keydown', handleKeydown)
 })
 
-// Быстрая комната Телемост
+// Быстрая комната Телемост (Яндекс Телемост)
 function generateQuickRoom() {
-  const link = `https://meet.jit.si/oge_physics_${props.request.id}_${Date.now()}`
+  const roomCode = `oge-${props.request.id}-${Math.floor(100000 + Math.random() * 900000)}`
+  const link = `https://telemost.yandex.ru/j/${roomCode}`
   props.request.telemost_url = link
   props.request.telemostUrl = link
   api.submitReview(props.request.id, { telemost_url: link, status: 'IN_PROGRESS' }, auth.userId)
@@ -738,22 +776,28 @@ async function confirmAssignHomework() {
   if (!selectedClosedTaskId.value) return
   assigningHw.value = true
   try {
-    await api.assignBankHomework(selectedClosedTaskId.value, props.request.id, auth.userId)
+    const res = await api.assignBankHomework(selectedClosedTaskId.value, props.request.id, auth.userId)
     await api.submitReview(props.request.id, {
       telemost_url: telemostLink.value,
-      teacher_response: 'Консультация в Телемосте успешно проведена. Назначено индивидуальное ДЗ из закрытого банка.',
-      status: 'IN_PROGRESS',
+      teacher_response: props.request.teacher_response || 'Разбор проведен. Назначена контрольная задача из закрытого банка.',
+      status: 'HW_ISSUED',
     }, auth.userId)
 
-    props.request.status = 'in_progress'
-    alert('✅ Консультация проведена, ДЗ прикреплено! Заявка направлена ученику для подтверждения.')
-    closeDetailModal()
+    props.request.status = 'HW_ISSUED'
+    props.request.homework = {
+      id: res.homework_id,
+      bank_task_id: res.bank_task_id,
+      task_text: res.task_text || selectedTaskPreview.value?.statement || 'Контрольная задача из закрытого банка',
+      status: 'PENDING'
+    }
+    alert('🔒 Задача из закрытого банка успешно назначена! Ученик получил уведомление.')
+    showClosedBankSelector.value = false
     emit('updated')
   } catch (err) {
     console.error('Ошибка назначения ДЗ:', err)
-    props.request.status = 'in_progress'
-    alert('✅ ДЗ прикреплено к заявке!')
-    closeDetailModal()
+    props.request.status = 'HW_ISSUED'
+    alert('✅ Контрольная задача назначена ученику!')
+    showClosedBankSelector.value = false
     emit('updated')
   } finally {
     assigningHw.value = false
@@ -771,11 +815,11 @@ async function completeCallWithoutHw() {
 
     props.request.status = 'in_progress'
     alert('✅ Видеоконсультация проведена! Ожидается подтверждение понимания от ученика.')
-    closeDetailModal()
+    showClosedBankSelector.value = false
     emit('updated')
   } catch (err) {
     props.request.status = 'in_progress'
-    closeDetailModal()
+    showClosedBankSelector.value = false
     emit('updated')
   }
 }
@@ -790,26 +834,58 @@ function toggleClarifyForm() {
   showClarifyForm.value = !showClarifyForm.value
 }
 
-// Ученик подтверждает, что всё понял -> закрывает заявку
+// Ученик подтверждает понимание -> статус UNDERSTOOD (заявка НЕ закрывается сразу, преподаватель выдает задачу из закрытого банка)
 async function handleStudentUnderstood() {
   closingTask.value = true
   try {
     const studentTgId = auth.telegramId || auth.userId
-    await api.completeTask(props.request.id, studentTgId)
-    props.request.status = 'COMPLETED'
-    auth.addXp(50)
-    alert('🎉 Отлично! Рады, что всё стало понятно. Заявка успешно закрыта (+50 XP)!')
-    closeDetailModal()
+    await api.markTaskUnderstood(props.request.id, studentTgId)
+    props.request.status = 'UNDERSTOOD'
+    alert('💡 Отлично! Вы подтвердили, что всё понятно. Преподаватель получил уведомление и выдаст вам задачу из закрытого банка для закрепления материала.')
     emit('updated')
   } catch (err) {
-    console.error('Ошибка завершения:', err)
-    props.request.status = 'COMPLETED'
-    auth.addXp(50)
-    alert('🎉 Заявка закрыта (+50 XP)!')
-    closeDetailModal()
+    console.error('Ошибка отметки понимания:', err)
+    props.request.status = 'UNDERSTOOD'
+    alert('💡 Статус обновлен! Преподаватель подбирает контрольную задачу.')
     emit('updated')
   } finally {
     closingTask.value = false
+  }
+}
+
+// Ученик вводит ответ на проверочную задачу из закрытого банка
+const homeworkAnswerInput = ref('')
+const checkingHwAnswer = ref(false)
+const hwFeedbackMsg = ref('')
+const hwFeedbackSuccess = ref(false)
+
+async function handleCheckHomeworkAnswer() {
+  if (!homeworkAnswerInput.value.trim()) return
+  checkingHwAnswer.value = true
+  hwFeedbackMsg.value = ''
+  try {
+    const studentTgId = auth.telegramId || auth.userId
+    const res = await api.checkTaskHomework(props.request.id, homeworkAnswerInput.value.trim(), studentTgId)
+    if (res.is_correct) {
+      hwFeedbackSuccess.value = true
+      hwFeedbackMsg.value = res.detail || '🎉 Верно! Задача решена правильно (+100 XP)!'
+      if (props.request.homework) {
+        props.request.homework.status = 'ACCEPTED'
+      }
+      props.request.status = 'COMPLETED'
+      auth.addXp(100)
+      alert('🎉 Поздравляем! Задача из закрытого банка решена верно! Заявка успешно закрыта, вам начислено +100 XP!')
+      emit('updated')
+    } else {
+      hwFeedbackSuccess.value = false
+      hwFeedbackMsg.value = res.detail || '❌ Неверный ответ. Попробуйте пересчитать еще раз!'
+    }
+  } catch (err) {
+    console.error('Ошибка проверки ДЗ:', err)
+    hwFeedbackSuccess.value = false
+    hwFeedbackMsg.value = err?.message || 'Ошибка связи с сервером при проверке ответа.'
+  } finally {
+    checkingHwAnswer.value = false
   }
 }
 
@@ -1455,4 +1531,90 @@ function confirmCompleted() {
   border: 1px solid #cbd5e1;
 }
 .close-modal-btn:hover { background: #e2e8f0; color: #0f172a; }
+
+/* Закрытый банк: проверочная задача и решение учеником */
+.assigned-hw-block {
+  background: #fefce8;
+  border: 2px solid #facc15;
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.hw-header { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #854d0e; font-weight: 700; }
+.hw-text { margin: 0; font-size: 13px; line-height: 1.5; color: #713f12; white-space: pre-wrap; }
+.hw-status-row { display: flex; gap: 8px; align-items: center; }
+.hw-status-tag { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 100px; background: #fed7aa; color: #9a3412; }
+.hw-status-tag.ACCEPTED { background: #dcfce7; color: #166534; }
+
+.hw-student-solve-box {
+  margin-top: 8px;
+  background: #ffffff;
+  border: 1.5px solid #fde047;
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.hw-input-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.hw-answer-input {
+  flex: 1;
+  min-width: 140px;
+  padding: 10px 14px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  outline: none;
+}
+.hw-answer-input:focus { border-color: #eab308; box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.2); }
+.hw-check-btn {
+  background: #eab308;
+  color: #713f12;
+  font-family: inherit;
+  font-weight: 800;
+  font-size: 13px;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 18px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.hw-check-btn:hover:not(:disabled) { background: #ca8a04; color: #ffffff; }
+.hw-check-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.hw-feedback-msg { margin: 0; font-size: 12px; font-weight: 700; padding: 6px 10px; border-radius: 8px; }
+.hw-feedback-msg.success { background: #dcfce7; color: #166534; }
+.hw-feedback-msg.error { background: #fee2e2; color: #991b1b; }
+
+/* Уведомление преподавателя об ответе «Всё понятно» */
+.teacher-understood-alert {
+  background: #f0fdf4;
+  border: 2px solid #4ade80;
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.tua-header { display: flex; align-items: flex-start; gap: 10px; }
+.tua-icon { font-size: 24px; line-height: 1; }
+.tua-header strong { font-size: 14px; color: #166534; display: block; }
+.tua-header p { margin: 4px 0 0; font-size: 12px; color: #15803d; line-height: 1.45; }
+
+.understood-badge-pill {
+  background: #dcfce7;
+  color: #166534;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 10px 16px;
+  border-radius: 100px;
+  border: 1px solid #86efac;
+}
 </style>

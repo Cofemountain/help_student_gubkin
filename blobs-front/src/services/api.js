@@ -110,6 +110,19 @@ export const api = {
     })
   },
 
+  markTaskUnderstood: (taskId, studentTgId) => {
+    return request(`/tasks/${taskId}/understood?student_tg_id=${encodeURIComponent(studentTgId)}`, {
+      method: 'POST',
+    })
+  },
+
+  checkTaskHomework: (taskId, userAnswer, studentTgId = null) => {
+    return request(`/tasks/${taskId}/check-homework`, {
+      method: 'POST',
+      body: JSON.stringify({ user_answer: userAnswer, student_tg_id: studentTgId }),
+    })
+  },
+
   clarifyTask: (taskId, clarification, studentTgId) => {
     return request(`/tasks/${taskId}/clarify?student_tg_id=${encodeURIComponent(studentTgId)}`, {
       method: 'POST',

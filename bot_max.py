@@ -711,7 +711,8 @@ async def handle_telemost_quick(client: MaxBotClient, callback_id: str, user_id:
     """Мгновенное создание комнаты видеозвонка в 1 клик."""
     await client.answer_callback(callback_id, notification="Видеокомната готова!")
 
-    room_url = f"https://meet.jit.si/max_oge_physics_task{task_id}_{int(time.time())}"
+    room_code = 7000000000 + (task_id * 10007) % 2000000000
+    room_url = f"https://telemost.yandex.ru/j/{room_code}"
     task_telemost_links[task_id] = room_url
 
     async with AsyncSessionLocal() as session:

@@ -47,6 +47,7 @@ class Homework(Base):
     task_text: Mapped[str] = mapped_column(Text, nullable=False)
     task_photo_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     solution_photo_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    bank_task_id: Mapped[Optional[int]] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), nullable=True)
 
     status: Mapped[str] = mapped_column(String(20), default=HomeworkStatus.ISSUED.value, nullable=False)
     feedback: Mapped[Optional[str]] = mapped_column(Text, nullable=True)

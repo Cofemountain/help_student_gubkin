@@ -194,3 +194,40 @@ async def notify_student_clarification(
     buttons = [[_btn_cb("📋 Открыть заявки", "menu:tutor_board")]]
     await notifier.send(tutor_tg_id, text, buttons)
     logger.info(f"[notify] task={task_id} clarification from {student_name} to tutor={tutor_tg_id}")
+
+
+async def notify_student_understood(
+    tutor_tg_id: int,
+    task_id: int,
+    topic_title: str,
+    student_name: str,
+):
+    notifier = get_notifier()
+    text = (
+        f"💡 Ученик понял тему по заявке #{task_id}!\n\n"
+        f"👤 Обучающийся: {student_name}\n"
+        f"📚 Раздел: {topic_title}\n\n"
+        f"Ученик подтвердил понимание материала. Пожалуйста, откройте карточку и выдайте проверочную задачу из закрытого банка для закрепления темы!"
+    )
+    buttons = [[_btn_cb("🔒 Выдать задачу из закрытого банка", f"accept:{task_id}")]]
+    await notifier.send(tutor_tg_id, text, buttons)
+    logger.info(f"[notify] task={task_id} understood: t={tutor_tg_id}")
+
+
+async def notify_homework_issued(
+    student_tg_id: int,
+    task_id: int,
+    topic_title: str,
+    task_name: str,
+):
+    notifier = get_notifier()
+    text = (
+        f"🔒 Вам выдана проверочная задача по заявке #{task_id}!\n\n"
+        f"📚 Раздел: {topic_title}\n"
+        f"🎯 Задание: {task_name}\n\n"
+        f"Откройте карточку заявки в приложении, решите задачу и введите ответ для закрытия темы и получения баллов (+100 XP)!"
+    )
+    buttons = [[_btn_cb("📝 Открыть задачу", f"view_task:{task_id}")]]
+    await notifier.send(student_tg_id, text, buttons)
+    logger.info(f"[notify] task={task_id} hw issued: s={student_tg_id}")
+

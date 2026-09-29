@@ -20,6 +20,8 @@ class TaskPart(str, Enum):
 class TaskStatus(str, Enum):
     OPEN = "OPEN"                      # Открыта, ожидает тьютора
     IN_PROGRESS = "IN_PROGRESS"        # Взята в работу тьютором
+    UNDERSTOOD = "UNDERSTOOD"          # Ученик подтвердил понимание, ожидает задачу из закрытого банка
+    HW_ISSUED = "HW_ISSUED"            # Задача из закрытого банка выдана ученику
     HW_SUBMITTED = "HW_SUBMITTED"      # ДЗ сдано учеником на проверку
     COMPLETED = "COMPLETED"            # Разбор завершен, ДЗ принято
     CANCELLED = "CANCELLED"            # Отменена
