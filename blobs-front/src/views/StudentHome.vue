@@ -31,7 +31,7 @@
 
       <div class="hero-actions">
         <router-link to="/create-request" class="cta-button">
-          ➕ Сформировать заявку на консультацию
+          Сформировать заявку на консультацию
         </router-link>
       </div>
     </header>
@@ -233,24 +233,26 @@ onMounted(() => {
 }
 
 .hero-actions {
-  margin-top: 8px;
+  margin-top: 10px;
   display: flex;
   justify-content: center;
+  width: 100%;
 }
 
 .cta-button {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
-  width: auto;
-  max-width: 92%;
+  text-align: center;
+  width: 100%;
+  max-width: 100%;
   box-sizing: border-box;
   background: var(--primary);
   color: var(--ink);
-  padding: 8px 18px;
+  padding: 10px 20px;
   border-radius: var(--radius-pill);
   font-weight: 700;
-  font-size: 13.5px;
+  font-size: 14px;
   text-decoration: none;
   box-shadow: 0 4px 14px rgba(240, 168, 117, 0.3);
   transition: transform 0.15s ease, background 0.15s ease;

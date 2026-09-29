@@ -242,6 +242,28 @@
     <!-- РЕЖИМ 2: ЭКЗАМЕНАЦИОННЫЙ ПРАКТИКУМ ФИПИ (ТРЕНАЖЁР)           -->
     <!-- ============================================================ -->
     <section v-else-if="activeMode === 'practice'" class="practice-section">
+      <!-- Поисковая строка Открытого практикума -->
+      <div class="search-container">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input
+            v-model="practiceSearchQuery"
+            type="text"
+            class="search-input"
+            placeholder="Поиск по условию, формулам, закону или теме..."
+          />
+          <button
+            v-if="practiceSearchQuery"
+            type="button"
+            class="clear-search-btn"
+            title="Очистить поиск"
+            @click="practiceSearchQuery = ''"
+          >
+            ✕
+          </button>
+        </div>
+      </div>
+
       <!-- Фильтры тренажера -->
       <div class="filters-panel">
         <div class="filter-group">
@@ -421,6 +443,28 @@
         <div class="cba-content">
           <strong>Закрытый банк задач ОГЭ и контрольных заданий</strong>
           <p>Задачи без готовых решений в сети из сборников А. В. Перышкина и ФИПИ Е. Е. Камзеевой. Решайте самостоятельно для проверки своих сил (+25 XP) или сформируйте заявку на консультацию с преподавателем.</p>
+        </div>
+      </div>
+
+      <!-- Поисковая строка Закрытого банка -->
+      <div class="search-container">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input
+            v-model="closedSearchQuery"
+            type="text"
+            class="search-input"
+            placeholder="Поиск проверочных задач по формулам, теме или номеру..."
+          />
+          <button
+            v-if="closedSearchQuery"
+            type="button"
+            class="clear-search-btn"
+            title="Очистить поиск"
+            @click="closedSearchQuery = ''"
+          >
+            ✕
+          </button>
         </div>
       </div>
 
@@ -789,6 +833,7 @@ function closeSolutionModal() {
 // --- Состояние для Практикума (Тренажера) ---
 const practiceTasks = ref([])
 const loadingPractice = ref(false)
+const practiceSearchQuery = ref('')
 const practiceGrade = ref(null)
 const practiceBlock = ref(null)
 const selectedDifficulty = ref(null)
@@ -1043,10 +1088,23 @@ async function loadPracticeTasks() {
 }
 
 const filteredPracticeTasks = computed(() => {
-  if (!selectedDifficulty.value) return practiceTasks.value
-  return practiceTasks.value.filter(
-    (t) => (t.difficulty || '').toLowerCase() === selectedDifficulty.value.toLowerCase()
-  )
+  let list = practiceTasks.value
+  if (selectedDifficulty.value) {
+    list = list.filter(
+      (t) => (t.difficulty || '').toLowerCase() === selectedDifficulty.value.toLowerCase()
+    )
+  }
+  const q = (practiceSearchQuery.value || '').trim().toLowerCase()
+  if (q) {
+    list = list.filter((t) => {
+      const title = (t.title || '').toLowerCase()
+      const statement = (t.statement || '').toLowerCase()
+      const topic = (t.topic_title || '').toLowerCase()
+      const author = (t.author || '').toLowerCase()
+      return title.includes(q) || statement.includes(q) || topic.includes(q) || author.includes(q)
+    })
+  }
+  return list
 })
 
 async function checkPracticeTask(task) {
@@ -1095,6 +1153,7 @@ async function checkPracticeTask(task) {
 // --- Логика Закрытого банка задач ---
 const closedTasks = ref([])
 const loadingClosed = ref(false)
+const closedSearchQuery = ref('')
 const closedGrade = ref(null)
 const closedBlock = ref(null)
 const selectedClosedDifficulty = ref(null)
@@ -1140,10 +1199,23 @@ async function loadClosedTasks() {
 }
 
 const filteredClosedTasks = computed(() => {
-  if (!selectedClosedDifficulty.value) return closedTasks.value
-  return closedTasks.value.filter(
-    (t) => (t.difficulty || '').toLowerCase() === selectedClosedDifficulty.value.toLowerCase()
-  )
+  let list = closedTasks.value
+  if (selectedClosedDifficulty.value) {
+    list = list.filter(
+      (t) => (t.difficulty || '').toLowerCase() === selectedClosedDifficulty.value.toLowerCase()
+    )
+  }
+  const q = (closedSearchQuery.value || '').trim().toLowerCase()
+  if (q) {
+    list = list.filter((t) => {
+      const title = (t.title || '').toLowerCase()
+      const statement = (t.statement || '').toLowerCase()
+      const topic = (t.topic_title || '').toLowerCase()
+      const author = (t.author || '').toLowerCase()
+      return title.includes(q) || statement.includes(q) || topic.includes(q) || author.includes(q)
+    })
+  }
+  return list
 })
 
 async function checkClosedTask(task) {
