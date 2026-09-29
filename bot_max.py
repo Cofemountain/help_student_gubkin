@@ -400,7 +400,7 @@ async def handle_telemost_tab(client: MaxBotClient, user_id: int):
         partner_name = t.student.first_name if user.active_role == UserRole.TUTOR.value else (t.tutor.first_name if t.tutor else "Преподаватель")
         partner_tag = f"@{t.student.username}" if user.active_role == UserRole.TUTOR.value and t.student.username else (f"@{t.tutor.username}" if t.tutor and t.tutor.username else "")
 
-        link = task_telemost_links.get(t.id)
+        link = task_telemost_links.get(t.id) or (t.telemost_url if t.telemost_url and "jit.si" not in t.telemost_url else None)
         if link:
             card_text = (
                 f"📌 Задача #{t.id} ({t.topic.title if t.topic else 'Физика'})\n"
@@ -504,7 +504,7 @@ async def handle_show_tutor_sessions(client: MaxBotClient, user_id: int):
         st = "🔵 В работе" if t.status == TaskStatus.IN_PROGRESS.value else "🟢 Завершено"
         s_name = t.student.first_name if t.student else "Ученик"
 
-        telemost_link = task_telemost_links.get(t.id)
+        telemost_link = task_telemost_links.get(t.id) or (t.telemost_url if t.telemost_url and "jit.si" not in t.telemost_url else None)
         telemost_status = "\n• Видеозвонок: создан" if telemost_link else ""
 
         desc = (
@@ -668,6 +668,13 @@ async def handle_accept_task(client: MaxBotClient, callback_id: str, task_id: in
 async def handle_telemost_menu(client: MaxBotClient, callback_id: str, user_id: int, task_id: int):
     """Меню видеозвонка: Яндекс Телемост или Быстрая комната."""
     existing_link = task_telemost_links.get(task_id)
+    if not existing_link:
+        async with AsyncSessionLocal() as session:
+            task = await crud_task.get_by_id(session, task_id)
+            if task and task.telemost_url and "jit.si" not in task.telemost_url:
+                existing_link = task.telemost_url
+                task_telemost_links[task_id] = existing_link
+
     await client.answer_callback(callback_id)
 
     if existing_link:
@@ -719,6 +726,8 @@ async def handle_telemost_quick(client: MaxBotClient, callback_id: str, user_id:
         task = await crud_task.get_by_id(session, task_id)
         if not task:
             return
+        task.telemost_url = room_url
+        await session.commit()
         student_tg_id = task.student.telegram_id if task.student else None
         tutor_name = task.tutor.first_name if task.tutor else "Преподаватель"
 
@@ -771,6 +780,8 @@ async def handle_telemost_link_input(client: MaxBotClient, user_id: int, text_co
         task = await crud_task.get_by_id(session, task_id)
         if not task:
             return True
+        task.telemost_url = telemost_link
+        await session.commit()
         student_tg_id = task.student.telegram_id if task.student else None
         tutor_name = task.tutor.first_name if task.tutor else "Преподаватель"
 
@@ -1545,6 +1556,11 @@ async def process_callback(client: MaxBotClient, update: Dict[str, Any]):
         task_id = int(payload.split(":", 1)[1])
         if payload.startswith("telemost_new:"):
             task_telemost_links.pop(task_id, None)
+            async with AsyncSessionLocal() as session:
+                t = await crud_task.get_by_id(session, task_id)
+                if t:
+                    t.telemost_url = ""
+                    await session.commit()
         await handle_telemost_menu(client, callback_id, user_id, task_id)
         return
 

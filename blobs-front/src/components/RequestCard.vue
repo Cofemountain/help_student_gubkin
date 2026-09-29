@@ -178,14 +178,31 @@
               <span class="tm-icon-large">📹</span>
               <div class="tm-details">
                 <strong>Индивидуальная видеоконсультация в Яндекс Телемосте</strong>
-                <p v-if="telemostLink">Комната Яндекс Телемост создана. Перейдите по ссылке для проведения видеоразбора:</p>
-                <p v-else>Нажмите для генерации комнаты в Яндекс Телемосте для созвона с учеником:</p>
+                <p v-if="telemostLink">Комната Яндекс Телемост готова. Нажмите для входа в видеозвонок:</p>
+                <p v-else>Создайте комнату для созвона с учеником в Яндекс Телемосте:</p>
                 <div class="tm-actions-row">
                   <a v-if="telemostLink" :href="telemostLink" target="_blank" rel="noopener" class="tm-connect-btn">
                     📹 Подключиться к Яндекс Телемосту
                   </a>
                   <button v-else type="button" class="tm-create-btn" @click="generateQuickRoom">
-                    ⚡ Создать встречу в Яндекс Телемосте
+                    ⚡ Создать встречу в 1 клик
+                  </button>
+                  <a href="https://telemost.yandex.ru/" target="_blank" rel="noopener" class="tm-open-link-btn">
+                    🌐 Открыть Яндекс Телемост
+                  </a>
+                  <button v-if="isTeacher" type="button" class="tm-edit-link-btn" @click="showTelemostInput = !showTelemostInput">
+                    {{ showTelemostInput ? '✕ Закрыть ввод' : (telemostLink ? '🔄 Изменить ссылку' : '🔗 Вставить свою ссылку') }}
+                  </button>
+                </div>
+                <div v-if="isTeacher && showTelemostInput" class="tm-custom-input-box">
+                  <input
+                    v-model="customTelemostInput"
+                    type="text"
+                    placeholder="https://telemost.yandex.ru/j/..."
+                    class="tm-custom-input"
+                  />
+                  <button type="button" class="tm-save-custom-btn" @click="saveCustomTelemost">
+                    💾 Сохранить
                   </button>
                 </div>
               </div>
@@ -520,7 +537,16 @@ const isTelemost = computed(() => {
 })
 
 const teacherResponseText = computed(() => props.request.teacher_response || props.request.teacherResponse || '')
-const telemostLink = computed(() => props.request.telemost_url || props.request.telemostUrl || '')
+const telemostLink = computed(() => {
+  let url = props.request.telemost_url || props.request.telemostUrl || ''
+  if (url && url.includes('jit.si')) {
+    const code = 7000000000 + (props.request.id * 10007) % 2000000000
+    url = `https://telemost.yandex.ru/j/${code}`
+  }
+  return url
+})
+const showTelemostInput = ref(false)
+const customTelemostInput = ref('')
 
 const rawPhotoUrl = computed(() => props.request.photo_url || props.request.photoUrl || '')
 const hasPhoto = computed(() => {
@@ -663,11 +689,26 @@ onUnmounted(() => {
 
 // Быстрая комната Телемост (Яндекс Телемост)
 function generateQuickRoom() {
-  const roomCode = `oge-${props.request.id}-${Math.floor(100000 + Math.random() * 900000)}`
+  const roomCode = 7000000000 + (props.request.id * 10007) % 2000000000
   const link = `https://telemost.yandex.ru/j/${roomCode}`
   props.request.telemost_url = link
   props.request.telemostUrl = link
   api.submitReview(props.request.id, { telemost_url: link, status: 'IN_PROGRESS' }, auth.userId)
+}
+
+async function saveCustomTelemost() {
+  const link = customTelemostInput.value.trim()
+  if (!link) return
+  if (!link.startsWith('http://') && !link.startsWith('https://')) {
+    window.alert('⚠️ Введите корректную ссылку, например https://telemost.yandex.ru/j/...')
+    return
+  }
+  props.request.telemost_url = link
+  props.request.telemostUrl = link
+  await api.submitReview(props.request.id, { telemost_url: link, status: 'IN_PROGRESS' }, auth.userId)
+  showTelemostInput.value = false
+  window.alert('✅ Ссылка на Яндекс Телемост успешно сохранена!')
+  emit('updated')
 }
 
 // Взять задачу преподавателю
@@ -1268,7 +1309,7 @@ function confirmCompleted() {
 .tm-icon-large { font-size: 28px; line-height: 1; }
 .tm-details strong { font-size: 14px; color: #1e3a8a; }
 .tm-details p { margin: 4px 0 10px; font-size: 12px; color: #475569; }
-.tm-actions-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.tm-actions-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .tm-connect-btn {
   background: #3b82f6;
   color: white;
@@ -1286,6 +1327,51 @@ function confirmCompleted() {
   font-weight: 700;
   padding: 8px 14px;
   border-radius: 100px;
+  cursor: pointer;
+}
+.tm-open-link-btn {
+  background: #f1f5f9;
+  color: #1e293b;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 100px;
+  border: 1px solid #cbd5e1;
+}
+.tm-edit-link-btn {
+  background: transparent;
+  color: #2563eb;
+  border: 1px solid #93c5fd;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 7px 12px;
+  border-radius: 100px;
+  cursor: pointer;
+}
+.tm-custom-input-box {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+.tm-custom-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1.5px solid #93c5fd;
+  border-radius: 8px;
+  font-size: 13px;
+  outline: none;
+  background: white;
+}
+.tm-save-custom-btn {
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
   cursor: pointer;
 }
 
