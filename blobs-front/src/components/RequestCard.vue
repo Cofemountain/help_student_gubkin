@@ -102,11 +102,23 @@
           </button>
         </template>
 
-        <!-- Ученик: В работе -->
-        <template v-if="isInProgress && !isTeacher">
+        <!-- Ученик: В работе (до выдачи задачи) -->
+        <template v-if="isInProgress && !isTeacher && !request.homework && !isHwIssued">
           <button type="button" class="action-btn check-solution-btn" @click="openDetailModal">
-            <span v-if="teacherResponseText || telemostLink">🎓 Проверить решение</span>
+            <span v-if="teacherResponseText || telemostLink">🎓 Проверить разбор</span>
             <span v-else>⏳ В работе</span>
+          </button>
+        </template>
+
+        <!-- Ученик: Подтвердил понимание, ждет задачу -->
+        <span v-if="isUnderstood && !isTeacher && !request.homework && !isHwIssued" class="student-understood-pill">
+          💡 Ждёт задачу от учителя
+        </span>
+
+        <!-- Ученик: Выдана задача из закрытого банка -> Кнопка «Решить задачу» -->
+        <template v-if="(isHwIssued || request.homework) && !isTeacher && (!request.homework || request.homework.status !== 'ACCEPTED') && !isCompleted">
+          <button type="button" class="action-btn solve-hw-btn" @click.stop="openDetailAndFocusHw">
+            🎯 Решить задачу (+100 XP)
           </button>
         </template>
 
@@ -546,6 +558,14 @@
             <span class="xp-tag">+150 XP</span>
           </button>
         </div>
+
+        <!-- Подвал модального окна: для ученика при наличии проверочной задачи -->
+        <div class="modal-footer" v-else-if="!isTeacher && (isHwIssued || request.homework) && (!request.homework || request.homework.status !== 'ACCEPTED') && !isCompleted">
+          <button type="button" class="action-btn solve-modal-footer-btn" @click.stop="focusHomeworkInput">
+            <span>🎯 Решить проверочную задачу</span>
+            <span class="xp-tag">+100 XP</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -869,6 +889,21 @@ function openDetailAndAssignHw() {
   setTimeout(() => {
     openClosedBankAssigner()
   }, 120)
+}
+
+function openDetailAndFocusHw() {
+  openDetailModal()
+  setTimeout(() => {
+    focusHomeworkInput()
+  }, 200)
+}
+
+function focusHomeworkInput() {
+  const input = document.querySelector('.hw-answer-input')
+  if (input) {
+    input.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    input.focus()
+  }
 }
 
 // Взять задачу преподавателю
@@ -1339,6 +1374,45 @@ function confirmCompleted() {
 @keyframes pulse-glow {
   0%, 100% { box-shadow: 0 2px 10px rgba(217, 119, 6, 0.4); }
   50% { box-shadow: 0 0 16px rgba(245, 158, 11, 0.7); }
+}
+.solve-hw-btn {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  box-shadow: 0 2px 10px rgba(16, 185, 129, 0.4);
+  font-weight: 800;
+  animation: pulse-solve 2s infinite ease-in-out;
+}
+.solve-hw-btn:hover {
+  background: linear-gradient(135deg, #059669, #047857);
+  transform: translateY(-1px);
+}
+@keyframes pulse-solve {
+  0%, 100% { box-shadow: 0 2px 10px rgba(16, 185, 129, 0.4); }
+  50% { box-shadow: 0 0 16px rgba(16, 185, 129, 0.7); }
+}
+.solve-modal-footer-btn {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
+  width: 100%;
+  justify-content: center;
+  padding: 12px 20px;
+  font-size: 14px;
+  font-weight: 800;
+  border-radius: 12px;
+}
+.solve-modal-footer-btn:hover {
+  background: linear-gradient(135deg, #059669, #047857);
+}
+.student-understood-pill {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+  padding: 3px 8px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
 }
 .answer-btn { background: #6366f1; color: white; box-shadow: 0 2px 8px rgba(99,102,241,0.25); }
 .chat-btn { background: #f1f5f9; color: #334155; border: 1.5px solid #e2e8f0; }
