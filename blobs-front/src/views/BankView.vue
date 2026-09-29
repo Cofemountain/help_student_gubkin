@@ -1284,8 +1284,8 @@ function createRequestFromTask(task) {
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
-  padding-bottom: calc(115px + env(safe-area-inset-bottom, 24px));
+  gap: 22px;
+  padding: 0 4px calc(130px + env(safe-area-inset-bottom, 24px));
 }
 
 /* ШАПКА */
@@ -1479,9 +1479,17 @@ function createRequestFromTask(task) {
   }
 }
 
-/* ПОИСК */
+/* СЕКЦИИ И ПОИСК */
+.solved-section,
+.practice-section,
+.closed-section {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
 .search-container {
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
 .search-box {
@@ -1491,7 +1499,8 @@ function createRequestFromTask(task) {
   background: white;
   border: 1.5px solid #cbd5e1;
   border-radius: var(--radius-md);
-  padding: 0 12px;
+  padding: 2px 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
@@ -1539,33 +1548,35 @@ function createRequestFromTask(task) {
 }
 
 /* ФИЛЬТРЫ */
-.filters-panel {
+.filters-panel,
+.practice-filters {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 14px;
   background: #f8fafc;
-  padding: 12px 16px;
-  border-radius: var(--radius-md);
+  padding: 16px 18px;
+  border-radius: var(--radius-lg);
   border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
 }
 
 .filter-group {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
 }
 
 .filter-label {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
-  color: #64748b;
+  color: #475569;
   min-width: 80px;
 }
 
 .grade-chips, .block-chips, .diff-chips {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
@@ -1606,18 +1617,18 @@ function createRequestFromTask(task) {
 .solved-tasks-grid {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 18px;
 }
 
 .solved-card {
   background: white;
   border: 1px solid #e2e8f0;
   border-radius: var(--radius-lg);
-  padding: 16px 18px;
+  padding: 18px 20px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   cursor: pointer;
   transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
 }
