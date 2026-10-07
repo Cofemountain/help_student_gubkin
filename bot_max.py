@@ -282,7 +282,7 @@ async def register_or_get_user(sender: Dict[str, Any]) -> User:
             last_name=last_name,
             avatar_url=avatar_url,
         )
-        user, _ = await crud_user.get_or_create(session, user_in)
+        user, created = await crud_user.get_or_create(session, user_in)
         # Если в МАКС задан тег, имя или аватар, ВСЕГДА синхронизируем их в базе автоматически!
         updated = False
         if username and user.username != username:
@@ -297,7 +297,7 @@ async def register_or_get_user(sender: Dict[str, Any]) -> User:
         if avatar_url and user.avatar_url != avatar_url:
             user.avatar_url = avatar_url
             updated = True
-        if updated:
+        if created or updated:
             await session.commit()
             await session.refresh(user)
         return user
@@ -332,8 +332,8 @@ async def handle_profile_view(client: MaxBotClient, user_id: int):
     """Отображение профиля пользователя, баллов, ранга/звания."""
     async with AsyncSessionLocal() as session:
         user = await crud_user.get_by_telegram_id(session, user_id)
-        if not user:
-            return
+    if not user:
+        user = await register_or_get_user({"user_id": user_id, "name": "Пользователь"})
 
     title_info = get_user_title(user.active_role, user.xp)
     role_str = "👨‍🏫 Преподаватель" if user.active_role == UserRole.TUTOR.value else "👨‍🎓 Ученик"
@@ -533,7 +533,7 @@ async def handle_show_my_tasks(client: MaxBotClient, user_id: int):
     async with AsyncSessionLocal() as session:
         user = await crud_user.get_by_telegram_id(session, user_id)
         if not user:
-            return
+            user = await register_or_get_user({"user_id": user_id, "name": "Пользователь"})
         tasks = await crud_task.get_student_tasks(session, student_id=user.id)
 
     if not tasks:

@@ -9,7 +9,10 @@ export const useAuthStore = defineStore('auth', () => {
   const maxEnv = initMaxApp()
 
   const userId = ref(localStorage.getItem('blobs_userId') || maxEnv.user.id)
-  const role = ref(localStorage.getItem('blobs_role') || maxEnv.roleFromUrl || null)
+  const role = ref(localStorage.getItem('blobs_role') || maxEnv.roleFromUrl || 'student')
+  if (!localStorage.getItem('blobs_role')) {
+    localStorage.setItem('blobs_role', role.value)
+  }
   const token = ref(localStorage.getItem('blobs_token') || `max-session-${userId.value}`)
   const botActivated = ref(localStorage.getItem('blobs_botActivated') === 'true' || true)
   const xp = ref(Number(localStorage.getItem('blobs_xp')) || 250)
@@ -118,6 +121,11 @@ export const useAuthStore = defineStore('auth', () => {
         }
         if (serverUser.id) {
           localStorage.setItem('blobs_db_id', String(serverUser.id))
+        }
+        if (serverUser.active_role) {
+          const mappedRole = serverUser.active_role === 'tutor' ? 'teacher' : 'student'
+          role.value = mappedRole
+          localStorage.setItem('blobs_role', mappedRole)
         }
         if (serverUser.xp !== undefined && serverUser.xp !== null) {
           xp.value = serverUser.xp

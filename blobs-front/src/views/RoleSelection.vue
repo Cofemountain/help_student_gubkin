@@ -68,6 +68,16 @@
               <span>Практикум в открытом банке задач с автопроверкой</span>
             </li>
           </ul>
+          <div class="card-action">
+            <button
+              type="button"
+              class="quick-enter-btn"
+              :class="{ 'btn-active': selectedRole === 'student' }"
+              @click.stop="selectAndConfirm('student')"
+            >
+              {{ selectedRole === 'student' ? '✓ Выбрано • Войти в кабинет →' : 'Выбрать ученика' }}
+            </button>
+          </div>
         </div>
 
         <!-- Карточка Преподавателя -->
@@ -100,6 +110,16 @@
               <span>Квалификационная шкала званий и рейтинг наставника</span>
             </li>
           </ul>
+          <div class="card-action">
+            <button
+              type="button"
+              class="quick-enter-btn"
+              :class="{ 'btn-active': selectedRole === 'teacher' }"
+              @click.stop="selectAndConfirm('teacher')"
+            >
+              {{ selectedRole === 'teacher' ? '✓ Выбрано • Войти в кабинет →' : 'Выбрать преподавателя' }}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -134,7 +154,7 @@
           class="submit-role-btn"
           @click="confirmRole"
         >
-          Войти в кабинет {{ selectedRole === 'teacher' ? 'преподавателя' : 'обучающегося' }}
+          Войти в кабинет {{ selectedRole === 'teacher' ? 'преподавателя' : 'обучающегося' }} →
         </BaseButton>
       </footer>
     </div>
@@ -169,6 +189,11 @@ const previewTitles = computed(() => {
   }
 })
 
+function selectAndConfirm(roleName) {
+  selectedRole.value = roleName
+  confirmRole()
+}
+
 function confirmRole() {
   auth.selectRole(selectedRole.value)
   router.push('/')
@@ -183,7 +208,9 @@ function confirmRole() {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding: 16px 12px 24px;
   background: radial-gradient(circle at 50% 10%, #1e293b 0%, #0f172a 100%);
   font-family: var(--font, system-ui, -apple-system, sans-serif);
@@ -511,20 +538,100 @@ function confirmRole() {
   color: #64748b;
 }
 
-/* Кнопка подтверждения */
-.portal-footer {
-  margin-top: 6px;
+/* Быстрое действие внутри карточки */
+.card-action {
+  margin-top: 10px;
+}
+
+.quick-enter-btn {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1.5px solid #cbd5e1;
+  background: #f8fafc;
+  color: #334155;
   display: flex;
+  align-items: center;
   justify-content: center;
 }
 
+.quick-enter-btn:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.quick-enter-btn.btn-active {
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.25);
+}
+
+.quick-enter-btn.btn-active:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+/* Кнопка подтверждения */
+.portal-footer {
+  margin-top: 8px;
+  display: flex;
+  justify-content: center;
+  position: sticky;
+  bottom: 0;
+  background: #ffffff;
+  padding: 8px 0;
+  z-index: 25;
+}
+
 .submit-role-btn {
-  width: auto;
-  min-width: 220px;
-  max-width: 90%;
-  font-size: 14px;
-  font-weight: 700;
-  padding: 10px 22px;
-  box-shadow: 0 4px 14px rgba(240, 168, 117, 0.35);
+  width: 100%;
+  font-size: 14.5px;
+  font-weight: 800;
+  padding: 12px 20px;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25);
+}
+
+@media (max-width: 640px) {
+  .onboarding-canvas {
+    padding: 10px 8px 16px;
+  }
+  .portal-card {
+    padding: 14px 12px;
+    gap: 10px;
+    margin: 0;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  }
+  .user-id-card {
+    padding: 8px 10px;
+    gap: 10px;
+  }
+  .user-meta h2 {
+    font-size: 16px;
+  }
+  .intro-description {
+    font-size: 13px;
+  }
+  .role-card {
+    padding: 10px 12px;
+  }
+  .role-card h3 {
+    font-size: 14.5px;
+  }
+  .role-summary {
+    font-size: 11.5px;
+    margin-bottom: 6px;
+  }
+  .role-perks {
+    display: none;
+  }
+  .qualifications-panel {
+    display: none;
+  }
 }
 </style>

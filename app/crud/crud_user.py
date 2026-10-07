@@ -36,7 +36,8 @@ class CRUDUser:
                 user.last_name = user_in.last_name
             if user_in.avatar_url:
                 user.avatar_url = user_in.avatar_url
-            await session.flush()
+            await session.commit()
+            await session.refresh(user)
             return user, False
 
         user = User(
@@ -51,7 +52,8 @@ class CRUDUser:
             level=OGELevel.GRADE_3.value,
         )
         session.add(user)
-        await session.flush()
+        await session.commit()
+        await session.refresh(user)
         return user, True
 
     async def update_active_role(self, session: AsyncSession, user: User, new_role: str) -> User:
